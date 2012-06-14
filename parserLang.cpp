@@ -646,6 +646,14 @@ void ParseLang::parseDescription( std::string parseFile )
 		while ( tokens.at(i).compare(";") != 0 || 
 			( tokens.at(i).compare(";") == 0 && inQuote ) )
 		{
+			if ( i >= tokens.size() - 1 )
+			{
+				std::string error = "\tError: End of file reached; statement ";
+				error += "with name \"";
+				error += statement.getName();
+				error += "\"\n\tnot terminated with a semicolon, \";\".";
+				throw error;
+			}
 			statement.addTokenToRule( tokens.at(i) );
 			if ( inQuote )
 			{
@@ -673,6 +681,7 @@ void ParseLang::parseDescription( std::string parseFile )
 		i++;
 		statements.push_back( statement );
 	}
+	return;
 }
 
 void ParseLang::printPassOne()
