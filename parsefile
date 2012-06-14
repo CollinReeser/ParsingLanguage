@@ -37,3 +37,5 @@ arithmetic2 = parenArith | arithmetic;
 
 parenArith = "(" > arithmetic2 | arithmetic > ")";
 
+include_rules = testInclude;
+

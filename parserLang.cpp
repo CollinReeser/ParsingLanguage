@@ -26,11 +26,40 @@ int castStringToInt( std::string val )
 // Constructor, which also happens to do all the work
 ParseLang::ParseLang( std::string parseFile , std::string sourcefile )
 {
+	toplevelVerification( false , parseFile );
+}
+
+// Constructor
+ParseLang::ParseLang( std::string parseFile )
+{
+	toplevelVerification( false , parseFile );
+}
+
+ParseLang::ParseLang()
+{
+}
+
+void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
+{
+	if ( quiet )
+	{
+		parseDescription( parseFile );
+		pullRuleSets( true );
+		ensureNoRuleDuplicates();
+		ensureParentheses();
+		ensureValidStart();
+		ensureOperatorUsage();
+		ensureSymbolsOperatorSeparated();
+		return;
+	}
 	try
 	{
 		std::cout << "Beginning top-level absorbtion of rule-set... \t\t\t";
 		parseDescription( parseFile );
-		std::cout << "Absorbed.\nEnsuring no statements share a common " <<
+		std::cout << "Absorbed.\nAbsorbing requested external rulesets... " <<
+			"\t\t\t";
+		pullRuleSets( false );
+		std::cout << "\nEnsuring no statements share a common " <<
 			"identifier... \t\t";
 		ensureNoRuleDuplicates();
 		std::cout << "Verified.\nEnsuring no statements contain parentheses " <<
@@ -41,7 +70,7 @@ ParseLang::ParseLang( std::string parseFile , std::string sourcefile )
 		ensureValidStart();
 		std::cout << "Verified.\nEnsuring proper operator usage... \t\t\t\t";
 		ensureOperatorUsage();
-		std::cout << "Verified\nEnsuring all symbols are separated by " <<
+		std::cout << "Verified.\nEnsuring all symbols are separated by " <<
 			"operators... \t\t";
 		ensureSymbolsOperatorSeparated();
 		std::cout << "Verified." << std::endl;
@@ -50,15 +79,139 @@ ParseLang::ParseLang( std::string parseFile , std::string sourcefile )
 	{
 		std::cout << "\n" << msg << std::endl;
 	}
+	/*
+	for ( int k = 0; k < (int) statements.size(); k++ )
+	{
+		std::cout << "Rule: " << statements.at(k).getName() << std::endl;
+	}
+	*/
+	return;
+}
+
+void ParseLang::pullRuleSets( bool nested )
+{
+	Statement statement;
+	for ( int i = 0; i < (int) statements.size(); i++ )
+	{
+		if ( statements.at(i).getName().compare( "include_rules" ) == 0 )
+		{
+			statement = statements.at(i);
+			// Remove include_rules from list of statements
+			statements.erase( statements.begin() + i );
+			break;
+		}
+	}
+	// No include_rules statement
+	if ( statement.getName().size() == 0 )
+	{
+		if ( !nested )
+		{
+			std::cout << "Left out.";
+		}
+		return;
+	}
+	// Otherwise, perform include
+	if ( !nested && statement.isNew() || statement.isPermeate() )
+	{
+		std::cout << "\tWarning: \"include_rules\" properties are meaningless."
+			<< std::endl;
+	}
+	std::vector<std::string> rule = statement.getRule();
+	for ( int i = 0; i < (int) rule.size() - 1; i++ )
+	{
+		try
+		{
+			if ( rule.at( i ).compare( ParseLang::parseFile ) == 0 )
+			{
+				std::string error = "\tCannot include self-referential files: ";
+				error += "File [";
+				error += ParseLang::parseFile;
+				error += "] attempts to include itself in rule ";
+				error += "\"include_rules\".";
+				throw error;
+			}
+			mergeStatementList( rule.at(i) );
+		}
+		catch ( std::string msg )
+		{
+			std::string error = "\tWhile pulling external rulesets from file [";
+			error += rule.at(i);
+			error += "]\n\tin file [";
+			error += ParseLang::parseFile;
+			error += "]:\n\t";
+			error += msg;
+			throw error;
+		}
+	}
+	if ( !nested )
+	{
+		std::cout << "Absorbed.";
+	}
+	return;
+}
+
+void ParseLang::mergeStatementList( std::string filename )
+{
+	ParseLang tempParse;
+	try
+	{
+		tempParse.parseDescription( filename );
+		tempParse.pullRuleSets( true );
+	}
+	catch ( std::string msg )
+	{
+		std::string error = "Malformed file [";
+		error += filename;
+		error += "] could not be ";
+		error += "parsed. This may be because\n\tthe file does not exist. ";
+		error += "Run the parser in \"verify\" mode on the file\n\tto ";
+		error += "determine errors."; 
+		throw error;
+	}
+	for ( int i = 0; i < (int) tempParse.statements.size(); i++ )
+	{
+		for ( int j = 0; j < (int) statements.size(); j++ )
+		{
+			if ( tempParse.statements.at(i).getName().compare( 
+				statements.at(j).getName() ) == 0 )
+			{
+				std::string error = "Error in absorbtion of file [";
+				error += filename;
+				error += "]";
+				error += ":\n\t";
+				error += "Rule ";
+				error += castIntToString(i);
+				error += " conflicts with rule ";
+				error += castIntToString(j);
+				error += " (zero-indexed) in file\n\t[";
+				error += ParseLang::parseFile;
+				error += "] ";
+				error += "with name \"";
+				error += tempParse.statements.at(i).getName();
+				error += "\".\n\t";
+				error += "Note that this error message may be misleading if ";
+				error += "file\n\t[";
+				error += filename;
+				error += "] itself uses \"include_rules\" to\n\tabsorb a ruleset;";
+				error += " this tertiary ruleset (or a ruleset any number of ";
+				error += "\n\tlayers down) may be the true culprit. Think \"C ";
+				error += "Include Guards\" and what\n\tthey do, except you ";
+				error += "don\'t have the luxury of using them here.";
+				throw error;
+			}
+		}
+		statements.push_back( tempParse.statements.at(i) );
+	}
+	return;
 }
 
 void ParseLang::ensureSymbolsOperatorSeparated()
 {
-	for ( int i = 0; i < statements.size(); i++ )
+	for ( int i = 0; i < (int) statements.size(); i++ )
 	{
 		// Get copy of the rule
 		std::vector<std::string> rule = statements.at(i).getRule();
-		for ( int j = 0; j < rule.size(); j++ )
+		for ( int j = 0; j < (int) rule.size(); j++ )
 		{
 			if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) ) &&
 				rule.at(j).compare( "\"" ) != 0 && 
@@ -133,11 +286,11 @@ bool ParseLang::isOperator( std::string op )
 
 void ParseLang::ensureOperatorUsage()
 {
-	for ( int i = 0; i < statements.size(); i++ )
+	for ( int i = 0; i < (int) statements.size(); i++ )
 	{
 		// Get copy of the rule
 		std::vector<std::string> rule = statements.at(i).getRule();
-		for ( int j = 0; j < rule.size(); j++ )
+		for ( int j = 0; j < (int) rule.size(); j++ )
 		{
 			if ( rule.at(j).compare( "*" ) == 0 )
 			{
@@ -253,9 +406,9 @@ void ParseLang::ensureOperatorUsage()
 
 void ParseLang::ensureNoRuleDuplicates()
 {
-	for ( int i = 0; i < statements.size(); i++ )
+	for ( int i = 0; i < (int) statements.size(); i++ )
 	{
-		for ( int j = i + 1; j < statements.size(); j++ )
+		for ( int j = i + 1; j < (int) statements.size(); j++ )
 		{
 			if ( statements.at(i).getName().compare( 
 				statements.at(j).getName() ) == 0 )
@@ -281,7 +434,7 @@ void ParseLang::ensureNoRuleDuplicates()
 void ParseLang::ensureParentheses()
 {
 	// Loop over all statements
-	for ( int i = 0; i < statements.size(); i++ )
+	for ( int i = 0; i < (int) statements.size(); i++ )
 	{
 		// The num of open and close parentheses must match at exit of
 		// statement analysis
@@ -289,13 +442,13 @@ void ParseLang::ensureParentheses()
 		int closeParen = 0;
 		// Get copy of the rule
 		std::vector<std::string> rule = statements.at(i).getRule();
-		for ( int j = 0; j < rule.size(); j++ )
+		for ( int j = 0; j < (int) rule.size(); j++ )
 		{
 			if ( rule.at(j).compare( "(" ) == 0 )
 			{
 				openParen++;
 				// This for loop is to detect empty parentheses: ()
-				for ( int k = j; k < rule.size(); k++ )
+				for ( int k = j; k < (int) rule.size(); k++ )
 				{
 					// If we found a non-operator within parentheses, success,
 					// the parentheses contain a symbolic token
@@ -356,7 +509,7 @@ void ParseLang::ensureParentheses()
 void ParseLang::ensureValidStart()
 {
 	// Loop over all statements
-	for ( int i = 0; i < statements.size(); i++ )
+	for ( int i = 0; i < (int) statements.size(); i++ )
 	{
 		/*
 		std::cout << "Token Zero: [" << statements.at(i).getRule().at(0) << 
@@ -381,6 +534,7 @@ void ParseLang::ensureValidStart()
 
 void ParseLang::parseDescription( std::string parseFile )
 {
+	ParseLang::parseFile = parseFile;
 	Lexer lex;
 	std::vector<std::string> tokens = lex.tokenizeFile( parseFile );
 	int i = 0;
@@ -523,13 +677,13 @@ void ParseLang::parseDescription( std::string parseFile )
 
 void ParseLang::printPassOne()
 {
-	for ( int i = 0; i < statements.size(); i++ )
+	for ( int i = 0; i < (int) statements.size(); i++ )
 	{
 		std::cout << "Statement " << i << ", Name: " << 
 			statements.at(i).getName() << std::endl;
 		std::cout << "  Rule: ";
 		std::vector<std::string> rule = statements.at(i).getRule();
-		for ( int j = 0; j < rule.size(); j++ )
+		for ( int j = 0; j < (int) rule.size(); j++ )
 		{
 			std::cout << rule.at(j) << " ";
 		}
@@ -551,12 +705,12 @@ void Statement::setName( std::string name )
 	return;
 }
 
-std::string Statement::getName()
+std::string Statement::getName() const
 {
 	return name;
 }
 
-std::vector<std::string> Statement::getRule()
+std::vector<std::string> Statement::getRule() const
 {
 	return rule;
 }
@@ -598,5 +752,18 @@ unsigned long long int Statement::getFlags()
 
 Statement::Statement() : flags( 0 ) , anchor( -1 )
 {
+}
+
+Statement& Statement::operator=( const Statement &other )
+{
+	if ( this == &other )
+	{
+		return *this;
+	}
+	name = other.getName();
+	rule = other.getRule();
+	anchor = other.anchor;
+	flags = other.flags;
+	return *this;
 }
 
