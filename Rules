@@ -1,0 +1,89 @@
+These are the grammar rules for the parsing language.
+
+A statement is made up of a name, properties, and the rule. The name is the 
+first portion of the statement, global properties follow, and the actual rule of
+the statment.
+
+Names can be anything not already reserved by the parsing environment for use to
+define special rules.
+
+Properties are denoted by a leading '@', and can be anything in the list of
+global properties. These properties are global only within the context of the
+rule being evaluated. Since rules are generally constructed by combining several
+other defined definitions, these properties propogate down to definitions used
+in the rules. For example, the @new property provides the capability to define
+a new symbol table for the rule, and any sub-definitions. Any definition that
+is explored as part of the rule for a statement that contains a @new has access
+to the new symbol table produced as a result of the @new property.
+
+Rules themselves are made up of combinations of string literals, other 
+definitions, and special keywords, tied together in some way by operators. 
+
+Note that for any lists, the first token should be read literally. The hyphen
+exists only to provide separation between the token and the description for the
+eyes.
+
+Special keywords:
+symbol - Demands that a symbol exists identical to the symbol in the source file
+	inside of the symbol table for that context. Can be tied with the @ operator
+	to specify the symbol table in a context to use, assuming there is more than
+	one. Combined with permeation, this symbol will be searched for first in the
+	current context symbol table, followed by the logical parent symbol tables,
+	possibly following particular branches in the lineage if the @ operator is
+	used.
+newsym - Adds the symbol in the source to the current symbol table, possibly
+	specified by the @ operator. If the symbol already exists in the symbol
+	table specified, parsing fails.
+NULL - Simply means that it is possible for there to be nothing in a particular
+	section and for the rule to evaluate correctly. This has little meaning
+	without being in combination with the "|" operator, such that NULL will
+	validate the rule if no other sub-rules combined with NULL with "|" validate
+	the rule.
+
+Operators:
+> - Binary operator. Simply means that once this operator is reached, the
+	definition for the rule cannot be processed at any point preceding this
+	operator. That is to say, there are several operators that allow the
+	processing of the definition to return to points previous to the operator
+	read, and this one specifically does not.
+| - Binary operator, can be chained with several sub-rules. This operator means
+	that of any number of combined sub-rules through use of one or more of these
+	"|" operators, at least one must be valid.
+* - Unary operator. Must be tied to a single definition. Means that that 
+	definition can apply zero or more times in that context, and should be
+	evaluated continuously until it fails to evaluate correctly.
+; - Denotes the end of a statement.
+() - Sub-rules of any complexity can be enclosed in parentheses with the effect
+	that operators can be applied to the parenthised quantity and treated as a
+	single sub-rule, with the exception of the "*" operator.
+@ - Unary operator. Outside of the context of the properties section, this
+	operator is right-affixed to any definitions that should search inside of
+	only specific symbol tables, assuming that more than one symbol table is
+	available. An integer value between 1 and 255 should immediately follow this
+	operator. Permeation combined with this operator allows for maintaining a
+	search through a specific branch of hierarchial symbol tables. That said,
+	the programmer must be aware that use of permeation and this operator and
+	the ability to define many symbol tables on many levels of definition
+	processing all work in tandem, and the entire parsing definition file should
+	be considered for ramifications at any use of any of these capabilities.
+
+
+
+
+Reserved names: 
+TOPLEVEL - This name refers to the rule that is evaluated first when actual
+	parsing of the input file is performed.
+
+Global Properties:
+@new - Can either be used alone or with a syntax that allows defining more than
+	one symbol table. Acceptable uses: "@new", "@new:1", "@new:37".
+	Note that @new must define at least one new symbol table, but cannot define
+	more than 255 symbol tables. Unacceptable uses: "@new:garbage", "@new:-1",
+	"@new:0", "@new:256".
+@permeate - Can either be used alone or with a syntax that allows defining
+	greater depths of permeation. This property allows a rule to search for
+	symbols in symbol tables that are "higher" than the symbol table(s)
+	currently being used. That is to say, if the rule being processed is under
+	the influence of any of one or more @new properties from any level of
+	processing depth, @permeate allows access to the symbol tables that are
+	being masked by the @new declarations. 
