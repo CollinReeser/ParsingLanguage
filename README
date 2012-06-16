@@ -1,4 +1,15 @@
-These are the grammar rules for the parsing language.
+This repository plays host to a project that defines a programming language to
+be used to describe the parsing rules for languages. The goal of this project
+is to provide, at the very least, the facility to check that a source file is
+properly structured. More ambitiously, this project aims to provide some level
+of advanced source checking, supplying the ability to keep track of and make
+decisions based on whether certain symbols have been defined yet, and allowing
+for access to differing, hierarchial symbol tables to pull from and assign to,
+all under programmer control. Ever more ambitiously, this project hopes to also
+yield a useful abstract syntax tree, the form of which would also be
+programmer-controlled.
+
+These are the syntax rules for the parsing language:
 
 A statement is made up of a name, properties, and the rule. The name is the 
 first portion of the statement, global properties follow, and the actual rule of
@@ -48,7 +59,8 @@ Operators:
 	read, and this one specifically does not.
 | - Binary operator, can be chained with several sub-rules. This operator means
 	that of any number of combined sub-rules through use of one or more of these
-	"|" operators, at least one must be valid.
+	"|" operators, at least one must be valid. This operator short circuits on
+	success.
 * - Unary operator. Must be tied to a single definition. Means that that 
 	definition can apply zero or more times in that context, and should be
 	evaluated continuously until it fails to evaluate correctly.
@@ -68,11 +80,24 @@ Operators:
 	be considered for ramifications at any use of any of these capabilities.
 
 
-
-
 Reserved names: 
 TOPLEVEL - This name refers to the rule that is evaluated first when actual
 	parsing of the input file is performed.
+	
+include_rules - This name refers to a rule that earns special syntax, purely
+	because it would be silly to constrain this particular rule to the syntax
+	normally expected. This rule takes the form:
+	"include_rules = file1 file2 ...;", where each file is should corrospond to
+	a text file in the same directory that itself contains statements in this
+	programming language. The idea is that the include_rules statement will
+	pull from those files their statements, and add them to the list of
+	statements available to be accessed. include_rules works recursively, such
+	that if you were to include a file that itself contains an include_rules
+	statement, that file has its includes resolved first, before then
+	combining all of the statements of the two child files to the parent file.
+	Note that naming collisions result in an error, and that multiple levels
+	of include-recursing can lead to confusion on which files are conflicting
+	with which.
 
 Global Properties:
 @new - Can either be used alone or with a syntax that allows defining more than
@@ -86,4 +111,63 @@ Global Properties:
 	currently being used. That is to say, if the rule being processed is under
 	the influence of any of one or more @new properties from any level of
 	processing depth, @permeate allows access to the symbol tables that are
-	being masked by the @new declarations. 
+	being masked by the @new declarations.
+@syntax - This is a placeholder reminder for myself that I do need to actually
+	start supporting functionality that leads to the "generates an abstract
+	syntax tree" bit of the requirements stated at the top of this file.
+	
+	
+C++ style single and multi-line comments are supported as expected.
+	
+Example simple parsing language files (The open and close braces represent the
+	beginning and ending of the files, but do not appear in the source):
+
+Accept any number of simple integer declaration and initialization by addition
+statements, as in "int var2 = 26 + 78 + var;"
+{
+TOPLEVEL = *decAndInit;
+
+decAndInit = "int" > newsym > "=" > lit_int > ( *addSegment | NULL ) > end;
+
+lit_int = #"0123456789";
+
+end = ";";
+
+addSegment = "+" > ( lit_int | symbol );
+}
+
+Accept any number of either bool or int declarations, keeping the symbol tables
+separate for both (variable names can be used twice; once for each type), and
+accept any number of assignments to established variables.
+{
+TOPLEVEL @new:2 = *( boolDec | intDec | intAssign | boolAssign );
+
+intDec = "int" > newsym@1 > ( end | ( "=" > lit_int > end ) );
+
+boolDec = "bool" > newsym@2 > ( end | ( "=" > bool_type > end ) );
+
+lit_int = #"0123456789";
+
+bool_type = ( "true" | "false" );
+
+end = ";";
+
+intAssign = symbol@1 > "=" > lit_int > end;
+
+boolAssign = symbol@2 > "=" > bool_type > end;
+}
+
+Now here are a few ways to define your own useful operations that are not core
+to the langauge:
+{
+// This defines a rule that acts as "symbol", but if that fails then it acts
+// as "newsym". This is useful for when you want to accept a symbol regardless
+// of whether it has been seen before
+ternsym = ( symbol | newsym ); // Note that order doesn't matter here with "|"
+}
+{
+// This defines a rule that accepts ONE or more new symbols (in contrast to
+// use of "*" by itself, which accepts zero or more)
+force_one = newsym > *newsym;
+}
+

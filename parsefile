@@ -1,3 +1,8 @@
+// This is the start of a rules file that describes an entire programming
+// language. It is not finished, but provides facilities for import statements
+// as well as the beginnings for function and variable declarations, both of
+// which can appear inside classes.
+
 TOPLEVEL = *import > ( *class | *function | *variableDec );
 
 import = "import" > string > end | access | ( "," > import );
@@ -37,5 +42,6 @@ arithmetic2 = parenArith | arithmetic;
 
 parenArith = "(" > arithmetic2 | arithmetic > ")";
 
-include_rules = testInclude;
+// Was used for testing purposes
+//include_rules = testInclude;
 
