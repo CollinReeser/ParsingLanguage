@@ -1,0 +1,18 @@
+TOPLEVEL = simple;
+
+simple = symbol > symbol > symbol > symbol;
+
+ternsym = ( symbol | newsym ); // Note that order doesn't matter here with "|"
+
+//wrong = > symbol;
+
+example = *(symbol | "apple" | "banana") > ( "pear" | "peach" );
+
+newEx = newsym@1 > newsym@2 > newsym@3;
+
+//rule = "the" "monster";
+
+intLit @new:255 @permeate:1 = "the" > "dragon" > #"1234567890";
+
+// This should break here --v
+force_one = newsym > *newsym "apple";

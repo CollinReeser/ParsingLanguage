@@ -241,7 +241,7 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 				error += "Two literal symbols not separated by an operator";
 				error += " found at token ";
 				error += castIntToString(j);
-				error += ". Two literal symbols\n\tmust have one or more ";
+				error += ".\n\tTwo literal symbols must have one or more ";
 				error += "operators between them.\n\tFound as: [";
 				error += rule.at( j - 2 );
 				error += " ";
@@ -277,7 +277,7 @@ bool ParseLang::isOperator( std::string op )
 	{
 		return true;
 	}
-	else if ( op.compare( ";" ) == 0 )
+	else if ( op.compare( ";" ) == 0 || op.compare( "#" ) == 0)
 	{
 		return true;
 	}
@@ -297,7 +297,8 @@ void ParseLang::ensureOperatorUsage()
 				// If "*" is attached to something other than a symbol or an
 				// open-paren, fail
 				if ( isOperator( rule.at( j + 1 ) ) && 
-					rule.at(j+1).compare( "(" ) != 0 )
+					rule.at(j+1).compare( "(" ) != 0 &&
+					rule.at(j+1).compare( "#" ) != 0)
 				{
 					std::string error = "Error in definition of ";
 					error += statements.at(i).getName();
@@ -349,12 +350,18 @@ void ParseLang::ensureOperatorUsage()
 					" " << rule.at( j + 1 ) << std::endl;
 				*/
 				// If "*" is attached to something other than a symbol or an
-				// open-paren, fail
+				// open-paren or quotes, fail
 				if ( j - 1 < 0 || ( ( isOperator( rule.at( j + 1 ) ) && 
 					rule.at( j + 1 ).compare( "(" ) != 0 &&
-					rule.at( j + 1 ).compare( "*" ) != 0 ) ||
+					rule.at( j + 1 ).compare( "*" ) != 0 &&
+					rule.at( j + 1 ).compare( "#" ) != 0 ) ||
 					( isOperator( rule.at( j - 1 ) ) &&
-					rule.at( j - 1 ).compare( ")" ) != 0 ) ) )
+					rule.at( j - 1 ).compare( ")" ) != 0 ) ||
+					( !isOperator( rule.at( j - 1 ) ) &&
+					rule.at( j - 1 ).compare( "\"") != 0 &&
+					rule.at( j - 1 ).compare( "symbol") != 0 &&
+					rule.at( j - 1 ).compare( "newsym") != 0 &&
+					castStringToInt( rule.at( j - 1 ) ) == 0 ) ) )
 				{
 					std::string error = "Error in definition of ";
 					error += statements.at(i).getName();
@@ -362,7 +369,7 @@ void ParseLang::ensureOperatorUsage()
 					error += "\">\" operator misused at token ";
 					error += castIntToString(j);
 					error += ", \">\" must be between symbols\n\t";
-					error += "or parentheses [)>(]. Found attached to: \"";
+					error += "or parentheses [)>(].";
 					error += "\n\tFound as: [";
 					error += rule.at( j - 1 );
 					error += " ";
@@ -381,6 +388,36 @@ void ParseLang::ensureOperatorUsage()
 					rule.at(j-1).compare("newsym") != 0 ) ||
 					castStringToInt( rule.at(j+1) ) <= 0 ||
 					castStringToInt( rule.at(j+1) ) > 255 )
+				{
+					std::string error = "Error in definition of ";
+					error += statements.at(i).getName();
+					error += ":\n\t";
+					error += "\"@\" operator misused at token ";
+					error += castIntToString(j);
+					error += ", \"@\" must follow \"symbol\" or \"newsym\"\n\t";
+					error += "and must precede an integer, 1-255.";
+					error += "\n\tFound as: [";
+					error += rule.at( j - 1 );
+					error += " ";
+					error += rule.at( j );
+					error += " ";
+					error += rule.at( j + 1 );
+					error += "].";
+					throw error;
+				}
+			}
+			else if ( rule.at(j).compare( "#" ) == 0 )
+			{
+				// If "*" is attached to something other than a symbol or an
+				// open-paren, fail
+				
+				if ( rule.at(j+1).compare( "\"" ) != 0 )
+				/*
+				if ( j - 1 < 0 || ( rule.at(j-1).compare("symbol") != 0 &&
+					rule.at(j-1).compare("newsym") != 0 ) ||
+					( castStringToInt( rule.at(j-1) ) <= 0 ||
+					castStringToInt( rule.at(j-1) ) > 255 ) ) 
+				*/
 				{
 					std::string error = "Error in definition of ";
 					error += statements.at(i).getName();
@@ -448,7 +485,7 @@ void ParseLang::ensureParentheses()
 			{
 				openParen++;
 				// This for loop is to detect empty parentheses: ()
-				for ( int k = j; k < (int) rule.size(); k++ )
+				for ( int k = j + 1; k < (int) rule.size(); k++ )
 				{
 					// If we found a non-operator within parentheses, success,
 					// the parentheses contain a symbolic token
@@ -525,7 +562,7 @@ void ParseLang::ensureValidStart()
 			error += ":\n\t";
 			error += "Invalid start to rule. First token is ";
 			error += statements.at(i).getRule().at(0);
-			error += " which cannot appear as the beginning of a rule.";
+			error += " which cannot appear as the\n\tbeginning of a rule.";
 			throw error;
 		}
 	}
