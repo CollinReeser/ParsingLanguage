@@ -82,6 +82,16 @@ private:
 	// This adds the statements from tempParse to this, ensuring no duplicates
 	void mergeStatementList( std::string filename );
 	bool isOperator( std::string op );
+	bool isKeyword( std::string keyword );
+	// This takes in a regular expression and a string to run the regular
+	// expression on, and returns true if the string was matched by the regular
+	// expression
+	bool matchRegex( std::string regex , std::string token );
+	// Match characters
+	bool matchChar( std::string characters , std::string token );
+	// Determine whether an # string is a regular expression or a character
+	// list matching request, and then evaluates whichever was requested
+	bool matchOctothorpeString( std::string octostring , std::string token );
 	std::vector<Statement> statements;
 	Scope topScope;
 	std::string parseFile;

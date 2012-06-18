@@ -3,6 +3,8 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <regex.h>
+#include <stdlib.h>
 #include "parserLang.h"
 #include "lexer.h"
 
@@ -37,6 +39,42 @@ ParseLang::ParseLang( std::string parseFile )
 
 ParseLang::ParseLang()
 {
+}
+
+// Returns true if the passed string is considered an operator by the parser
+bool ParseLang::isOperator( std::string op )
+{
+	if ( op.compare( "*" ) == 0 || op.compare( "|" ) == 0 )
+	{
+		return true;
+	}
+	else if ( op.compare( ">" ) == 0 || op.compare( "@" ) == 0 )
+	{
+		return true;
+	}
+	else if ( op.compare( "(" ) == 0 || op.compare( ")" ) == 0 )
+	{
+		return true;
+	}
+	else if ( op.compare( ";" ) == 0 || op.compare( "#" ) == 0)
+	{
+		return true;
+	}
+	return false;
+}
+
+// Returns true if the passed string is considered a keyword
+bool ParseLang::isKeyword( std::string keyword )
+{
+	if ( keyword.compare( "newsym" ) == 0 || keyword.compare( "symbol" ) == 0 )
+	{
+		return true;
+	}
+	if ( keyword.compare( "NULL" ) == 0 )
+	{
+		return true;
+	}
+	return false;
 }
 
 void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
@@ -213,6 +251,10 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 		std::vector<std::string> rule = statements.at(i).getRule();
 		for ( int j = 0; j < (int) rule.size(); j++ )
 		{
+			/*
+			std::cout << "\n" << rule.at(j) << std::endl;
+			std::cout << i << " " << j << std::endl;
+			*/
 			if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) ) &&
 				rule.at(j).compare( "\"" ) != 0 && 
 				rule.at(j+1).compare( "\"" ) != 0 )
@@ -223,7 +265,7 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 				error += "Two symbols not separated by an operator found at";
 				error += " token ";
 				error += castIntToString(j);
-				error += ". Two symbols\n\tmust have one or more operators ";
+				error += ". Two symbols\n\tmust have binary operators ";
 				error += "between them.\n\tFound as: [";
 				error += rule.at( j );
 				error += " ";
@@ -241,8 +283,8 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 				error += "Two literal symbols not separated by an operator";
 				error += " found at token ";
 				error += castIntToString(j);
-				error += ".\n\tTwo literal symbols must have one or more ";
-				error += "operators between them.\n\tFound as: [";
+				error += ".\n\tTwo literal symbols must ";
+				error += "binary operators between them.\n\tFound as: [";
 				error += rule.at( j - 2 );
 				error += " ";
 				error += rule.at( j - 1 );
@@ -257,31 +299,72 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 				error += "].";
 				throw error;
 			}
+			else if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) ) 
+				&& isKeyword( rule.at(j) ) &&
+				rule.at(j+1).compare( "\"" ) == 0 )
+			{
+				std::string error = "Error in definition of ";
+				error += statements.at(i).getName();
+				error += ":\n\t";
+				error += "Keyword found followed by a literal symbol not ";
+				error += "separated by an operator\n\tfound at token ";
+				error += castIntToString(j);
+				error += ".\n\tSymbols must have ";
+				error += "binary operators between them.\n\tFound as: [";
+				error += rule.at( j );
+				error += " ";
+				error += rule.at( j + 1 );
+				error += " ";
+				error += rule.at( j + 2 );
+				error += " ";
+				error += rule.at( j + 3 );
+				error += "].";
+				throw error;
+			}
+			else if ( rule.at(j).compare(")") == 0 &&
+				( rule.at(j+1).compare("*") == 0 ||
+				rule.at(j+1).compare("\"") == 0 || 
+				isKeyword( rule.at(j+1) ) || 
+				rule.at(j+1).compare("(") == 0 ) )
+			{
+				std::string error = "Error in definition of ";
+				error += statements.at(i).getName();
+				error += ":\n\t";
+				error += "Parentheses-section followed by symbol not ";
+				error += "separated by an operator\n\tfound at token ";
+				error += castIntToString(j);
+				error += ".\n\tSymbols must have ";
+				error += "binary operators between them.\n\tFound as: [";
+				error += rule.at( j );
+				error += " ";
+				error += rule.at( j + 1 );
+				error += "].";
+				throw error;
+			}
+			else if ( isKeyword( rule.at(j) ) &&
+				( rule.at(j+1).compare("*") == 0 ||
+				rule.at(j+1).compare("\"") == 0 || 
+				rule.at(j+1).compare("#") == 0 || 
+				isKeyword( rule.at(j+1) ) || 
+				rule.at(j+1).compare("(") == 0 ) )
+			{
+				std::string error = "Error in definition of ";
+				error += statements.at(i).getName();
+				error += ":\n\t";
+				error += "Symbol followed by parentheses-section or symbol ";
+				error += "not separated by an\n\toperator found at token ";
+				error += castIntToString(j);
+				error += ".\n\tSymbols must have ";
+				error += "binary operators between them.\n\tFound as: [";
+				error += rule.at( j );
+				error += " ";
+				error += rule.at( j + 1 );
+				error += "].";
+				throw error;
+			}
 		}
 	}
 	return;
-}
-
-// Returns true if the passed string is considered an operator by the parser
-bool ParseLang::isOperator( std::string op )
-{
-	if ( op.compare( "*" ) == 0 || op.compare( "|" ) == 0 )
-	{
-		return true;
-	}
-	else if ( op.compare( ">" ) == 0 || op.compare( "@" ) == 0 )
-	{
-		return true;
-	}
-	else if ( op.compare( "(" ) == 0 || op.compare( ")" ) == 0 )
-	{
-		return true;
-	}
-	else if ( op.compare( ";" ) == 0 || op.compare( "#" ) == 0)
-	{
-		return true;
-	}
-	return false;
 }
 
 void ParseLang::ensureOperatorUsage()
@@ -743,6 +826,94 @@ void ParseLang::printPassOne()
 			"\n\n";
 	}
 	return;
+}
+
+bool ParseLang::matchOctothorpeString( std::string octostring , 
+	std::string token )
+{
+	bool success;
+	if ( octostring.at(0) == 'r' )
+	{
+		success = matchRegex( octostring.substr( 1 ) , token );
+	}
+	else if ( octostring.size() >= 2 && octostring.at(0) == '\\' && 
+		octostring.at(1) == 'r' )
+	{
+		success = matchChar( octostring.substr( 1 ) , token );
+	}
+	else
+	{
+		success = matchChar( octostring , token );
+	}
+	return success;
+}
+
+bool ParseLang::matchChar( std::string characters , std::string token )
+{
+	bool success = true;
+	for ( int i = 0; i < token.size(); i++ )
+	{
+		for ( int j = 0; j < characters.size(); j++ )
+		{
+			if ( token.at(i) == characters.at(j) )
+			{
+				break;
+			}
+			if ( j == characters.size() - 1 )
+			{
+				success = false;
+			}
+		}
+		if ( !success )
+		{
+			break;
+		}
+	}
+	return success;
+}
+
+// http://www.peope.net/old/regex.html
+bool ParseLang::matchRegex( std::string regexString , std::string tokenString )
+{
+	bool success = true;
+	const int len = 256;
+	regex_t regex;
+	int ret;
+	char* msgbuf = (char*)malloc( len );
+
+	/* Compile regular expression */
+	ret = regcomp( &regex , regexString.c_str() , REG_EXTENDED );
+	if( ret )
+	{
+		regerror( ret , &regex , msgbuf , len );
+		std::string errormsg = msgbuf;
+		free( msgbuf );
+		regfree( &regex );
+		throw errormsg;
+	}
+
+	/* Execute regular expression */
+	ret = regexec( &regex , tokenString.c_str() , 0 , 0 , 0 );
+	if( !ret )
+	{
+		// Success
+	}
+	else if ( ret == REG_NOMATCH )
+	{
+		success = false;
+	}
+	else
+	{
+		regerror( ret , &regex , msgbuf , len );
+		std::string errormsg = msgbuf;
+		free( msgbuf );
+		regfree( &regex );
+		throw errormsg;
+	}
+	/* Free compiled regular expression if you want to use the regex_t again */
+	regfree( &regex );
+	free( msgbuf );
+	return success;
 }
 
 void Statement::setName( std::string name )
