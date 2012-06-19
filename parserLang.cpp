@@ -6,7 +6,7 @@
 #include <regex.h>
 #include <stdlib.h>
 #include "parserLang.h"
-#include "lexer.h"
+#include "lexer/lexer.h"
 
 // Takes an int and returns a string representation
 std::string castIntToString( int val )
@@ -23,6 +23,20 @@ int castStringToInt( std::string val )
 	int num;
 	ss >> num;
 	return num;
+}
+
+// Constructor, which also happens to do all the work
+ParseLang::ParseLang( std::string parseFile , std::string sourcefile ,
+	std::vector<std::string> (*lexer_function)(std::string) )
+{
+	toplevelVerification( false , parseFile , lexer_function );
+}
+
+// Constructor
+ParseLang::ParseLang( std::string parseFile , 
+	std::vector<std::string> (*lexer_function)(std::string) )
+{
+	toplevelVerification( false , parseFile , lexer_function );
 }
 
 // Constructor, which also happens to do all the work
@@ -77,7 +91,8 @@ bool ParseLang::isKeyword( std::string keyword )
 	return false;
 }
 
-void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
+void ParseLang::toplevelVerification( bool quiet , std::string parseFile ,
+	 std::vector<std::string> (*lexer_function)(std::string) )
 {
 	if ( quiet )
 	{
@@ -652,11 +667,11 @@ void ParseLang::ensureValidStart()
 	return;
 }
 
-void ParseLang::parseDescription( std::string parseFile )
+void ParseLang::parseDescription( std::string parseFile ,
+	std::vector<std::string> (*lexer_function)(std::string) )
 {
 	ParseLang::parseFile = parseFile;
-	Lexer lex;
-	std::vector<std::string> tokens = lex.tokenizeFile( parseFile );
+	std::vector<std::string> tokens = lexer_function( parseFile );
 	int i = 0;
 	while ( i < tokens.size() )
 	{

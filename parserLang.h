@@ -4,7 +4,7 @@
 
 #include <string>
 #include <vector>
-#include "lexer.h"
+#include "lexer/lexer.h"
 
 #define NEW_TABLE ( 1l << ( 8 * sizeof(unsigned long long int) - 1 ) )
 #define PERMEATE ( 1l << ( 8 * sizeof(unsigned long long int) - 2 ) )
@@ -55,13 +55,21 @@ public:
 	ParseLang( std::string parseFile , std::string sourcefile );
 	ParseLang( std::string parseFile );
 	ParseLang();
+	ParseLang( std::string parseFile , std::string sourcefile ,
+		std::vector<std::string> (*lexer_function)(std::string) );
+	ParseLang( std::string parseFile ,
+		std::vector<std::string> (*lexer_function)(std::string) );
 	void printPassOne();
 private:
-	void toplevelVerification( bool quiet , std::string parseFile );
+	void toplevelVerification( bool quiet , std::string parseFile ,
+		std::vector<std::string> (*lexer_function)(std::string) = 
+		tokenizeFile  );
 	// This builds a table of raw statements, parsing the name and properties
 	// of the statement, and then simply throwing all of the tokens of the rule
 	// into a vector for later
-	void parseDescription( std::string parseFile );
+	void parseDescription( std::string parseFile , 
+		std::vector<std::string> (*lexer_function)(std::string) = 
+		tokenizeFile );
 	// This ensures that all parentheses are matched, and that they are used
 	// correctly (no empty parens, etc)
 	void ensureParentheses();

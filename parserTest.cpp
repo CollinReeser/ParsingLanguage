@@ -6,6 +6,7 @@
 #include <regex.h>
 #include <stdlib.h>
 #include "parserLang.h"
+#include "lexer/lexer.h"
 
 int castStringToInt( std::string val );
 bool matchRegex( std::string regexString , std::string tokenString );
@@ -25,11 +26,11 @@ int main( int argc , char** argv )
 	}
 	if ( argc == 2 )
 	{
-		ParseLang parse( argv[1] );
+		ParseLang parse( argv[1] , tokenizeFile );
 	}
 	if ( argc >= 3 )
 	{
-		ParseLang parse( argv[1] , argv[2] );
+		ParseLang parse( argv[1] , argv[2] , tokenizeFile );
 	}
 	std::cout << "\n\n";
 	try
