@@ -5,7 +5,7 @@ simple = symbol > symbol > symbol > symbol;
 ternsym = ( symbol | newsym ); // Note that order doesn't matter here with "|"
 
 // This should match against a an arbitrarily complex well-formed string token
-lit_string = #"r^".*"$";
+lit_string = #"r^\".*\"$";
 
 //wrong = > symbol;
 

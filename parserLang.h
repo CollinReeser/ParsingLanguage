@@ -95,6 +95,9 @@ private:
 	// Determine whether an # string is a regular expression or a character
 	// list matching request, and then evaluates whichever was requested
 	bool matchOctothorpeString( std::string octostring , std::string token );
+	// This returns true if the string passed in is considered a string literal
+	// containing no whitespace
+	bool isStringLiteral( std::string token );
 	std::vector<Statement> statements;
 	Scope topScope;
 	std::string parseFile;

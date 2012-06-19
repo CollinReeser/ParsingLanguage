@@ -121,6 +121,10 @@ void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
 	for ( int k = 0; k < (int) statements.size(); k++ )
 	{
 		std::cout << "Rule: " << statements.at(k).getName() << std::endl;
+		for ( int m = 0; m < statements.at(k).getRule().size(); m++ )
+		{
+			std::cout << "\t" << statements.at(k).getRule().at(m) << std::endl;
+		}
 	}
 	*/
 	return;
@@ -381,6 +385,7 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 
 void ParseLang::ensureOperatorUsage()
 {
+	//std::cout << "\nEnter EOU" << std::endl;
 	for ( int i = 0; i < (int) statements.size(); i++ )
 	{
 		// Get copy of the rule
@@ -503,10 +508,11 @@ void ParseLang::ensureOperatorUsage()
 			}
 			else if ( rule.at(j).compare( "#" ) == 0 )
 			{
+				//std::cout << "\tEnter octothorpe" << std::endl;
 				// If "*" is attached to something other than a symbol or an
 				// open-paren, fail
 				
-				if ( rule.at(j+1).compare( "\"" ) != 0 )
+				if ( rule.at(j+1).at(0) != '"' )
 				/*
 				if ( j - 1 < 0 || ( rule.at(j-1).compare("symbol") != 0 &&
 					rule.at(j-1).compare("newsym") != 0 ) ||
@@ -530,9 +536,11 @@ void ParseLang::ensureOperatorUsage()
 					error += "].";
 					throw error;
 				}
+				//std::cout << "\tExit octothorpe" << std::endl;
 			}
 		}
 	}
+	//std::cout << "Exit  EOU" << std::endl;
 	return;
 }
 
@@ -670,7 +678,15 @@ void ParseLang::parseDescription( std::string parseFile )
 	// Here we want consistent lexing of the parsing language file, and thus
 	// it is not user definable. However, the lexer for the source file to be
 	// parsed by the parsing algorithm will be user definable
-	std::vector<std::string> tokens = tokenizeFile( parseFile );
+	std::vector<std::string> tokens = tokenizeFile2( parseFile );
+	/*
+	std::cout << "TOKENS:" << std::endl;
+	for ( int i = 0; i < tokens.size(); i++ )
+	{
+		std::cout << tokens.at(i) << std::endl;
+	}
+	std::cout << "END TOKENS" << std::endl;
+	*/
 	int i = 0;
 	while ( i < tokens.size() )
 	{
@@ -775,39 +791,33 @@ void ParseLang::parseDescription( std::string parseFile )
 		i++;
 		// The following is an algorithm to ensure that quotes only enclose
 		// exactly one token
-		bool inQuote = false;
-		int quoteTokens = 0;
-		while ( tokens.at(i).compare(";") != 0 || 
-			( tokens.at(i).compare(";") == 0 && inQuote ) )
+		while ( tokens.at(i).compare(";") != 0 )
 		{
 			if ( i >= tokens.size() - 1 )
 			{
-				std::string error = "\tError: End of file reached; statement ";
-				error += "with name \"";
+				std::string error = "\tError in definition of ";
 				error += statement.getName();
-				error += "\"\n\tnot terminated with a semicolon, \";\".";
+				error += "\n\tnot terminated with a semicolon, \";\".";
 				throw error;
 			}
 			statement.addTokenToRule( tokens.at(i) );
-			if ( inQuote )
+			if ( tokens.at(i).at(0) == '"' )
 			{
-				quoteTokens++;
-			}
-			if ( tokens.at(i).compare( "\"" ) == 0 )
-			{
-				inQuote = !inQuote;
-			}
-			if ( quoteTokens == 2 && !inQuote )
-			{
-				quoteTokens = 0;
-			}
-			else if ( ( quoteTokens == 1 || quoteTokens > 2 ) && !inQuote )
-			{
-				std::string error = "Error in definition of ";
-				error += statement.getName();
-				error += ":\n\t";
-				error += "Quotes must enclose exactly one literal token.";
-				throw error;
+				// This will match the token against a string literal that
+				// contains no whitespace
+				if ( !matchRegex( "^\"[^ \t\n]+\"$" , tokens.at(i) ) )
+				{
+					std::string error = "Error in definition of ";
+					error += statement.getName();
+					error += ":\n\t";
+					error += "Quotes must enclose exactly one literal token; ";
+					error += "Malformed string literal found at token\n\t";
+					error += castIntToString( i );
+					error += ", ";
+					error += tokens.at(i);
+					error += ".";
+					throw error;
+				}
 			}
 			i++;
 		}
@@ -928,6 +938,11 @@ bool ParseLang::matchRegex( std::string regexString , std::string tokenString )
 	regfree( &regex );
 	free( msgbuf );
 	return success;
+}
+
+bool isStringLiteral( std::string token )
+{
+	return false;
 }
 
 void Statement::setName( std::string name )

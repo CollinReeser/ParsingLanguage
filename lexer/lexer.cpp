@@ -44,10 +44,21 @@ std::vector<std::string> tokenizeFile2( std::string fileName )
 			{
 				do
 				{
-					temp += lines.at(i).at(j++);
+					if ( lines.at(i).at(j) == '\\' && 
+						j < lines.at(i).size() - 1 && 
+						lines.at(i).at(j+1) == '"' )
+					{
+						// Here we add the quotes character to the token,
+						// skipping the backslash that escaped it
+						temp += lines.at(i).at(++j);
+						j++;
+					}
+					else
+					{
+						temp += lines.at(i).at(j++);
+					}
 				} while ( lines.at(i).at(j) != '"' );
 				temp += '"';
-				j++;
 				tokens.push_back( temp );
 				temp.clear();
 				continue;
