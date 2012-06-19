@@ -13,6 +13,9 @@
 // clean up the result
 std::vector<std::string> tokenizeFile( std::string fileName )
 	throw (std::string);
+// As tokenizeFile but also treats string literals as single tokens	
+std::vector<std::string> tokenizeFile2( std::string fileName )
+	throw (std::string);
 // This function combines simple operators into complex ones when the
 // operators are adjacent in the vector. For example, if two "<" strings
 // are adjacent in the token vector, they are combined into "<<"

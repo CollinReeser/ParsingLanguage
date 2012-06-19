@@ -26,16 +26,26 @@ int main( int argc , char** argv )
 	}
 	if ( argc == 2 )
 	{
-		ParseLang parse( argv[1] , tokenizeFile );
+		ParseLang parse( argv[1] );
 	}
 	if ( argc >= 3 )
 	{
-		ParseLang parse( argv[1] , argv[2] , tokenizeFile );
+		ParseLang parse( argv[1] , argv[2] );
 	}
 	std::cout << "\n\n";
 	try
 	{
 		if ( matchRegex( "ca?b" , "cab" ) )
+		{
+			std::cout << "Reg Success: expects success" << std::endl;
+		}
+		else
+		{
+			std::cout << "Reg Failure: expects success" << std::endl;
+		}
+		// This is a demonstration of the regular expression that matches any
+		// string literal
+		if ( matchRegex( "^\".*\"$" , "\" helkj dsfkhjdfs ldfs lih dfs \"" ) )
 		{
 			std::cout << "Reg Success: expects success" << std::endl;
 		}

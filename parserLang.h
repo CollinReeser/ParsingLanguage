@@ -55,21 +55,16 @@ public:
 	ParseLang( std::string parseFile , std::string sourcefile );
 	ParseLang( std::string parseFile );
 	ParseLang();
-	ParseLang( std::string parseFile , std::string sourcefile ,
-		std::vector<std::string> (*lexer_function)(std::string) );
-	ParseLang( std::string parseFile ,
-		std::vector<std::string> (*lexer_function)(std::string) );
 	void printPassOne();
 private:
-	void toplevelVerification( bool quiet , std::string parseFile ,
+	void toplevelVerification( bool quiet , std::string parseFile );
+	void parseSourceFile( std::string sourcefile , 
 		std::vector<std::string> (*lexer_function)(std::string) = 
-		tokenizeFile  );
+		tokenizeFile2 );
 	// This builds a table of raw statements, parsing the name and properties
 	// of the statement, and then simply throwing all of the tokens of the rule
 	// into a vector for later
-	void parseDescription( std::string parseFile , 
-		std::vector<std::string> (*lexer_function)(std::string) = 
-		tokenizeFile );
+	void parseDescription( std::string parseFile );
 	// This ensures that all parentheses are matched, and that they are used
 	// correctly (no empty parens, etc)
 	void ensureParentheses();

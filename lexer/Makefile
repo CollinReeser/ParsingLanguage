@@ -1,4 +1,7 @@
-all: lexigraph.o
+all: lexigraph.o lexerTest
+
+lexerTest: lexigraph.o
+	g++ -o lexerTest lexerTest.cpp lexigraph.o
 
 lexigraph.o: lexer.o SourceRead.o MiscTextUtil.o StripComments.o ShuntingYard.o
 	ld -r lexer.o SourceRead.o MiscTextUtil.o StripComments.o ShuntingYard.o -o\
