@@ -418,8 +418,6 @@ void ParseLang::ensureOperatorUsage()
 				std::cout << rule.at( j - 1 ) << " " << rule.at( j ) <<
 					" " << rule.at( j + 1 ) << std::endl;
 				*/
-				// If "*" is attached to something other than a symbol or an
-				// open-paren, fail
 				if ( j - 1 < 0 || ( ( isOperator( rule.at( j + 1 ) ) && 
 					rule.at( j + 1 ).compare( "(" ) != 0 &&
 					rule.at( j + 1 ).compare( "*" ) != 0 ) ||
@@ -449,8 +447,6 @@ void ParseLang::ensureOperatorUsage()
 				std::cout << rule.at( j - 1 ) << " " << rule.at( j ) <<
 					" " << rule.at( j + 1 ) << std::endl;
 				*/
-				// If "*" is attached to something other than a symbol or an
-				// open-paren or quotes, fail
 				if ( j - 1 < 0 || ( ( isOperator( rule.at( j + 1 ) ) && 
 					rule.at( j + 1 ).compare( "(" ) != 0 &&
 					rule.at( j + 1 ).compare( "*" ) != 0 &&
@@ -458,9 +454,8 @@ void ParseLang::ensureOperatorUsage()
 					( isOperator( rule.at( j - 1 ) ) &&
 					rule.at( j - 1 ).compare( ")" ) != 0 ) ||
 					( !isOperator( rule.at( j - 1 ) ) &&
-					!isStringLiteral( rule.at( j - 1 ) &&
-					rule.at( j - 1 ).compare( "symbol") != 0 &&
-					rule.at( j - 1 ).compare( "newsym") != 0 &&
+					!isStringLiteral( rule.at( j - 1 ) ) &&
+					!isKeyword( rule.at( j - 1 ) ) &&
 					castStringToInt( rule.at( j - 1 ) ) == 0 ) ) )
 				{
 					std::string error = "Error in definition of ";
@@ -940,7 +935,7 @@ bool ParseLang::matchRegex( std::string regexString , std::string tokenString )
 	return success;
 }
 
-bool isStringLiteral( std::string token )
+bool ParseLang::isStringLiteral( std::string token )
 {
 	return matchRegex( "^\"[^ \t\n]+\"$" , token );
 }

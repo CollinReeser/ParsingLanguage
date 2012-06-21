@@ -24,4 +24,4 @@ force_one = newsym > *newsym > "apple";
 
 //force_three = symbol ("apple");
 
-force_four = symbol *(#"123");
+force_four = symbol > *(#"123");
