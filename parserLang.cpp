@@ -332,7 +332,7 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 			}
 			else if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) ) 
 				&& isKeyword( rule.at(j) ) &&
-				rule.at(j+1).compare( "\"" ) == 0 )
+				isStringLiteral( rule.at(j+1) ) )
 			{
 				std::string error = "Error in definition of ";
 				error += statements.at(i).getName();
@@ -354,7 +354,7 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 			}
 			else if ( rule.at(j).compare(")") == 0 &&
 				( rule.at(j+1).compare("*") == 0 ||
-				rule.at(j+1).compare("\"") == 0 || 
+				isStringLiteral( rule.at(j+1) ) || 
 				isKeyword( rule.at(j+1) ) || 
 				rule.at(j+1).compare("(") == 0 ) )
 			{
@@ -374,7 +374,7 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 			}
 			else if ( isKeyword( rule.at(j) ) &&
 				( rule.at(j+1).compare("*") == 0 ||
-				rule.at(j+1).compare("\"") == 0 || 
+				isStringLiteral( rule.at(j+1) ) || 
 				rule.at(j+1).compare("#") == 0 || 
 				isKeyword( rule.at(j+1) ) || 
 				rule.at(j+1).compare("(") == 0 ) )
@@ -473,7 +473,7 @@ void ParseLang::ensureOperatorUsage()
 					( isOperator( rule.at( j - 1 ) ) &&
 					rule.at( j - 1 ).compare( ")" ) != 0 ) ||
 					( !isOperator( rule.at( j - 1 ) ) &&
-					rule.at( j - 1 ).compare( "\"") != 0 &&
+					!isStringLiteral( rule.at( j - 1 ) &&
 					rule.at( j - 1 ).compare( "symbol") != 0 &&
 					rule.at( j - 1 ).compare( "newsym") != 0 &&
 					castStringToInt( rule.at( j - 1 ) ) == 0 ) ) )
@@ -995,7 +995,7 @@ bool ParseLang::matchRegex( std::string regexString , std::string tokenString )
 
 bool isStringLiteral( std::string token )
 {
-	return false;
+	return matchRegex( "^\"[^ \t\n]+\"$" , token );
 }
 
 void Statement::setName( std::string name )
