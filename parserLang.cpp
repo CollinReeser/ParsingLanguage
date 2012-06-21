@@ -138,10 +138,36 @@ void ParseLang::ensureMeaningfulTokens()
 		std::vector<std::string> rule = statements.at(i).getRule();
 		for ( int j = 0; j < (int) rule.size(); j++ )
 		{
-			if ( !isKeyword( rule.at(i) ) && !isOperator( rule.at(i) ) 
-				&& !)
+			if ( !isKeyword( rule.at(j) ) && !isOperator( rule.at(j) ) 
+				&& !isStringLiteral( rule.at(j) ) && !isRuleName(rule.at(j) ) )
+			{
+				std::string error = "Error in definition of ";
+				error += statements.at(i).getName();
+				error += ":\n\t";
+				error += "Non-operator, non-keyword, non-rule-name, ";
+				error += "non-literal found at token ";
+				error += castIntToString(j);
+				error += ".\n\tDid you mean to treat the token as a string ";
+				error += "literal or did you spell a rule name wrong?";
+				error += "\n\tFound as: [";
+				error += rule.at( j );
+				error += "].";
+				throw error;
+			}
 		}
 	}
+}
+
+bool ParseLang::isRuleName( std::string token )
+{
+	for ( int i = 0; i < (int) statements.size(); i++ )
+	{
+		if ( statements.at(i).getName().compare( token ) == 0 )
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void parseSourceFile( std::string sourcefile , 

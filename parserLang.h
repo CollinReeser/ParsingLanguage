@@ -93,6 +93,12 @@ private:
 	void mergeStatementList( std::string filename );
 	bool isOperator( std::string op );
 	bool isKeyword( std::string keyword );
+	// This returns true if the string passed in is considered a string literal
+	// containing no whitespace
+	bool isStringLiteral( std::string token );
+	// Checks if the string is the name of an established rule in the list of
+	// statements
+	bool isRuleName( std::string token );
 	// This takes in a regular expression and a string to run the regular
 	// expression on, and returns true if the string was matched by the regular
 	// expression
@@ -102,9 +108,6 @@ private:
 	// Determine whether an # string is a regular expression or a character
 	// list matching request, and then evaluates whichever was requested
 	bool matchOctothorpeString( std::string octostring , std::string token );
-	// This returns true if the string passed in is considered a string literal
-	// containing no whitespace
-	bool isStringLiteral( std::string token );
 	std::vector<Statement> statements;
 	Scope topScope;
 	std::string parseFile;
