@@ -27,11 +27,14 @@ int main( int argc , char** argv )
 	if ( argc == 2 )
 	{
 		ParseLang parse( argv[1] , tokenizeFile );
+		//parse.printPassOne();
 	}
 	if ( argc >= 3 )
 	{
 		ParseLang parse( argv[1] , argv[2] , tokenizeFile );
+		//parse.printPassOne();
 	}
+	/*
 	std::cout << "\n\n";
 	try
 	{
@@ -90,7 +93,7 @@ int main( int argc , char** argv )
 	{
 		std::cout << "Lit string failure: expects success" << std::endl;
 	}
-	//parse.printPassOne();
+	*/
 	return 0;
 }
 

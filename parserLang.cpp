@@ -141,6 +141,21 @@ void ParseLang::toplevelVerification( bool quiet , std::string parseFile ,
 	return;
 }
 
+void ParseLang::ensureMeaningfulTokens()
+{
+	for ( int i = 0; i < (int) statements.size(); i++ )
+	{
+		// Get copy of the rule
+		std::vector<std::string> rule = statements.at(i).getRule();
+		for ( int j = 0; j < (int) rule.size(); j++ )
+		{
+			if ( !isKeyword( rule.at(i) ) && !isOperator( rule.at(i) ) 
+				&& !)
+		}
+	}
+	return;
+}
+
 void ParseLang::pullRuleSets( bool nested )
 {
 	Statement statement;
@@ -747,7 +762,42 @@ void ParseLang::parseDescription( std::string parseFile ,
 				}
 				else
 				{
-					statement.setPermeateNum( 1 );
+					statement.setPermeateNum( 0 );
+				}
+			}
+			else if ( tokens.at(i).compare( "center" ) == 0 )
+			{
+				i++;
+				if ( tokens.at(i).compare( ":" ) == 0 )
+				{
+					i++;
+					int centerLocation = castStringToInt( tokens.at(i++) );
+					if ( centerLocation > 0 && centerLocation <= 255 )
+					{
+						statement.setCenterLocation( centerLocation );
+					}
+					else if ( centerLocation <= 0 )
+					{
+						std::string error = "Error in definition of ";
+						error += statement.getName();
+						error += ":\n\t";
+						error += "@center cannot focus on symbol tables ";
+						error += "less than 1.";
+						throw error;
+					}
+					else
+					{
+						std::string error = "Error in definition of ";
+						error += statement.getName();
+						error += ":\n\t";
+						error += "@center cannot focus on symbol tables ";
+						error += "greater than 255.";
+						throw error;
+					}
+				}
+				else
+				{
+					statement.setCenterLocation( 1 );
 				}
 			}
 			// Error
@@ -836,8 +886,11 @@ void ParseLang::printPassOne()
 			"Yes; ":"No; " ) <<
 			"Permeates? " << ( ( statements.at(i).isPermeate() ) ? 
 			"Yes; " : "No; " ) <<
+			"Centered? " << ( ( statements.at(i).isCenter() ) ? 
+			"Yes; " : "No; " ) <<
 			"ST: " << (int)( SYMBOL_DEPTH( statements.at(i).getFlags() ) ) <<
 			" P: " << (int)( PERMEATE_DEPTH( statements.at(i).getFlags() ) ) << 
+			" C: " << (int)( CENTERING_SPOT( statements.at(i).getFlags() ) ) << 
 			"\n\n";
 	}
 	return;
@@ -967,14 +1020,26 @@ void Statement::setPermeateNum( int num )
 	return;
 }
 
+void Statement::setCenterLocation( int num )
+{
+	flags |= CENTER;
+	flags |= num << 16;
+	return;
+}
+
 bool Statement::isNew()
 {
-	return ( flags >> 63 );
+	return ( flags >> 63 ) & 0b1;
 }
 
 bool Statement::isPermeate()
 {
 	return ( flags >> 62 ) & 0b1;
+}
+
+bool Statement::isCenter()
+{
+	return ( flags >> 61 ) & 0b1;
 }
 
 unsigned long long int Statement::getFlags()
