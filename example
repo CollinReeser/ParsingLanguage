@@ -15,7 +15,7 @@ newEx = newsym@1 > newsym@2 > newsym@3;
 
 //rule = "the" "monster";
 
-intLit @new:255 @permeate:1 = "the" > "dragon" > #"1234567890";
+intLit @new:255 @permeate:1 @center:255 = "the" > "dragon" > #"1234567890";
 
 // This should break here --v
 force_one = newsym > *newsym > "apple";
