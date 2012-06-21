@@ -46,6 +46,16 @@ int main( int argc , char** argv )
 		{
 			std::cout << "Reg Failure: expects success" << std::endl;
 		}
+		// This is a demonstration of the regular expression that matches any
+		// string literal
+		if ( matchRegex( "^\".*\"$" , "\" helkj dsfkhjdfs ldfs lih dfs \"" ) )
+		{
+			std::cout << "Reg Success: expects success" << std::endl;
+		}
+		else
+		{
+			std::cout << "Reg Failure: expects success" << std::endl;
+		}
 	}
 	catch ( std::string msg )
 	{

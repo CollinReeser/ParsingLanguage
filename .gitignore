@@ -1,0 +1,5 @@
+*.o
+parserTest
+lexerTest
+lexer/lexerTest
+lexer/lexerTestFile

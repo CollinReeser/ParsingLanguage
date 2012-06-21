@@ -26,20 +26,6 @@ int castStringToInt( std::string val )
 }
 
 // Constructor, which also happens to do all the work
-ParseLang::ParseLang( std::string parseFile , std::string sourcefile ,
-	std::vector<std::string> (*lexer_function)(std::string) )
-{
-	toplevelVerification( false , parseFile , lexer_function );
-}
-
-// Constructor
-ParseLang::ParseLang( std::string parseFile , 
-	std::vector<std::string> (*lexer_function)(std::string) )
-{
-	toplevelVerification( false , parseFile , lexer_function );
-}
-
-// Constructor, which also happens to do all the work
 ParseLang::ParseLang( std::string parseFile , std::string sourcefile )
 {
 	toplevelVerification( false , parseFile );
@@ -91,8 +77,7 @@ bool ParseLang::isKeyword( std::string keyword )
 	return false;
 }
 
-void ParseLang::toplevelVerification( bool quiet , std::string parseFile ,
-	 std::vector<std::string> (*lexer_function)(std::string) )
+void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
 {
 	if ( quiet )
 	{
@@ -153,6 +138,18 @@ void ParseLang::ensureMeaningfulTokens()
 				&& !)
 		}
 	}
+}
+
+void parseSourceFile( std::string sourcefile , 
+	std::vector<std::string> (*lexer_function)(std::string) )
+{
+	// Use either the default or user-defined lexing function to tokenize the
+	// source file for the language being parsed by the parsing language
+	std::vector<std::string> tokens = lexer_function( sourcefile );
+
+	// Here, do the algorithm for parsing the source file
+	
+
 	return;
 }
 
@@ -682,11 +679,13 @@ void ParseLang::ensureValidStart()
 	return;
 }
 
-void ParseLang::parseDescription( std::string parseFile ,
-	std::vector<std::string> (*lexer_function)(std::string) )
+void ParseLang::parseDescription( std::string parseFile )
 {
 	ParseLang::parseFile = parseFile;
-	std::vector<std::string> tokens = lexer_function( parseFile );
+	// Here we want consistent lexing of the parsing language file, and thus
+	// it is not user definable. However, the lexer for the source file to be
+	// parsed by the parsing algorithm will be user definable
+	std::vector<std::string> tokens = tokenizeFile( parseFile );
 	int i = 0;
 	while ( i < tokens.size() )
 	{
