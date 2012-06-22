@@ -5,7 +5,8 @@
 #include <string>
 #include <regex.h>
 #include <stdlib.h>
-#include "parserLang.h"
+#include "ParseLang.h"
+
 #include "lexer/lexer.h"
 
 int castStringToInt( std::string val );
