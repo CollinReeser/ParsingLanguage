@@ -1,0 +1,164 @@
+/* 
+Hi Osman!
+The lexer I wrote for my compiler is the same lexer I am using to lex this
+language, so I have support for C-style single- and multi-line comments
+*/
+
+// include_rules is a special rulename whose syntax is different and simpler
+// than other rules for going-to-be obvious reasons. Every token after
+// include_rules is treated as a filename, besides the semicolon, and
+// the filename is opened and recursively evaluated just as this file is, with
+// the added bonus of loading all of the rules in that file into the rules
+// loaded for this file. With the effect of being able to write "libraries"
+// for this language, which include many simple but useful rules, which I
+// will provide examples of later. Since this works recursively, you can have
+// many levels of includes in the files you're including, although this isn't
+// really necessary or recommended. I just wanted to add that functionality
+//include_rules = std_ruleset;
+
+// Another special rule, but shares the same syntax as the normal rules. This
+// is simply the first rule to be evaluated, as in the main() function.
+// This file will describe source files that contain functions which can have
+// arbitrary signatures, perform declarations and assignments of local
+// variables, and return some value. Simple example.
+// So the statement *function simply says that for this file to be correctly
+// constructed, it must contain 0 or more blocks of tokens that fit with the
+// rule for function
+TOPLEVEL = *function;
+
+// This says that a function is made of exactly one signature and exactly one
+// block
+function = signature > block;
+
+// This says a signature is a var_type, followed by a symbol we haven't yet
+// seen. This is a good a time as any to introduce the symbol table 
+// functionality. Symbol tables can be created on the fly in a hierarchy of 
+// connections, with multiple symbol tables per level. At this point since
+// none have been declared, there is just one symbol table at the top level
+// of the hierarchy. That means that whatever token is hit at newsym is going
+// to be added to the symbol table. Then we expect a literal open paren, then
+// to satisfy the param_list rule or not, then a close paren. The NULL is only
+// valid in a list of ORed rules, and means that if nothing in an arbitarily
+// complex ORed list returns true, then the ORed list still returns true.
+// Placement of the NULL is meaningless as it just sets a flag in the 
+// interpreter.
+// This rule will accept something like:
+// bool isEqual( int one , int two )
+signature = var_type > newsym > "(" > ( NULL | param_list ) > ")";
+
+// This says a param_list is either nothing, or a variable declaration followed
+// by nothing or a comma and another param_list. This demonstrates that rules
+// can be constructed recursively
+param_list = var_type > newsym > ( NULL | ( "," > param_list ) );
+
+// A var_type is simply a token that is one of the three things listed. | is
+// an OR, and chaining them is valid, and as soon as one evaluates to true, it
+// short circuits. The quotes just mean the token must exactly match it to be
+// valid
+var_type = ( "int" | "bool" | "float" );
+
+// A block is made up of any number of declarations and assignments, followed
+// by a mandatory return statement at the end, all enclosed in braces.
+// The @new means to create a new layer of symbol tables below the current one.
+// You can define some number of symbol tables to create at that level with the
+// syntax @new:# where # is some number 1-255. Just saying @new defaults to 1.
+// @permeate allows a call to symbol to search both the current symbol table
+// for a valid entry, or some number of higher symbol tables up the hierarchy.
+// @permeate:# allows for defining a certain number of symbol table levels to
+// search upward in, from 1-255. @permeate without a qualifier means all
+// symbol tables can be searched that are at or above the current level.
+// By doing this, we can have local variables in each function, that share names
+// but don't conflict with eachother, while still being able to refer to the
+// symbols declared in the signature
+block @new @permeate = "{" > *( declaration | assignment | mini_block ) > 
+	"return" > ( lit_int | lit_bool | lit_float | symbol ) > ";" > "}";
+
+// A declaration declares an int variable, a bool variable, or a float variable
+declaration = ( int_dec | bool_dec | float_dec );
+
+int_dec = "int" > newsym > ( NULL | ( "=" > arith_expr ) ) > ";";
+
+bool_dec = "bool" > newsym > ( NULL | ( "=" > lit_bool ) ) > ";";
+
+float_dec = "float" > newsym > ( NULL | ( "=" > float_expr ) ) > ";";
+
+arith_expr = lit_int > ( NULL | ( operation > arith_expr ) );
+
+float_expr = lit_float > ( NULL | ( operation > float_expr ) );
+
+operation = ( "+" | "-" | "*" | "/" );
+
+// The octothorpe operator means the token must be made up of these characters
+// and nothing else. This operator also allows for using regular expressions,
+// by way of putting an r at the beginning of the string: #"r^\".*\"$" matches
+// against literal strings. If you feel the need to use # in the simpler form,
+// but for some reason have to put the r at the beginning, you can escape it as
+// in #"\rqwety"
+lit_int = #"0123456789";
+
+lit_bool = ( "true" | "false" );
+
+// Will match 123 or 123. or 123.123 . This would probably be a good spot to
+// use regular expressions, depending on whether the lexer you are using
+// spits out either a single token for a float, as in 123.123, or if it
+// separates the tokens into 123 . 123
+lit_float = #"0123456789" > ( NULL | ( "." > ( NULL | #"0123456789" ) ) );
+
+assignment = symbol > "=" > ( arith_expr | float_expr | lit_bool ) > ";";
+
+// Here, this is a braces-enclosed block that gets its own scope
+mini_block @new @permeate = "{" > *( declaration | assignment | mini_block ) > 
+	"}";
+	
+// Once I went to run the parser over this file, a few problems crept up, which
+// was a Good Thing. It is really hard to think of all the edge cases when the
+// software gets complex, and of course I hadn't. The first problem that came
+// up was actually the lexers fault, not the parser, and had to do with string
+// literals not getting tokenized correctly if they were the first thing on an
+// input line, immediately following a tab character. The two problem cases
+// were in rules block and mini_block, with the "return" and "}" tokens. So
+// I fixed that. Then I ran into a couple problems with the parser complaining
+// I did something wrong when it was syntactically correct, so I fixed those.
+// I am sure there are probably still some edge cases I have missed, but for
+// now at least this file and the several other example files I have written
+// are parsed correctly.
+
+// My idea for the implementation of the interpreter for this language is
+// such that I write the parser well enough that I know that the file is well
+// formed, so that I can write the interpreter with the assumption that any
+// input file that passes the parser test can be interpreted blindly, with
+// no error checking. This simplifies the interpreter implementation, clearly.
+
+// I recognize that there are several fundamental problems with this, not the
+// least of which that it is impossible to differentiate the types of sumbols
+// that are in the symbol tables. After all, this is at least initially just a
+// language that checks if a file is well-formed, not if it is correct. I feel
+// that either I am going to hve to redo this project and include that
+// functionality, or maybe just leave that work to later stages of the
+// compilation process, especially if I can get this project to spit out an
+// abstract syntax tree.
+
+// Also, especially after seeing how regular expressions are formed, I am
+// tempted to make a few changes to the syntax of the language. Right now,
+// the * operator allows for an arbitrary number of matches to a rule, and
+// is associated with the rule that comes to its right. To implement this,
+// I would probably make the bit that implements * to recurse on it, and then
+// whenever that bit returns, if it returns true, then recurse again. If it
+// was associated with what came to the left of it, as in regular expressions,
+// I could implement that bit iteratively, instead of recursively, and that
+// would be dandy. I'll have to think about it.
+
+// The following are example rules that may be useful, at least as examples,
+// for things that could appear in a library file
+
+// This defines a rule that acts as "symbol", but if that fails then it acts
+// as "newsym". This is useful for when you want to accept a symbol regardless
+// of whether it has been seen before
+ternsym = ( symbol | newsym );
+
+// This defines a rule that accepts ONE or more new symbols (in contrast to
+// use of "*" by itself, which accepts zero or more)
+force_one = newsym > *newsym;
+
+// Heh, maybe I could implement some sort of generics functionality to make
+// force_one more useful. This is fun.

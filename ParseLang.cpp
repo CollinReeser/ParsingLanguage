@@ -109,14 +109,14 @@ void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
 		std::cout << "Verified.\nEnsuring statements start with valid " <<
 			"tokens... \t\t\t";
 		ensureValidStart();
+		std::cout << "Verified.\nEnsuring all symbols are valid tokens..." <<
+			"\t\t\t";
+		ensureMeaningfulTokens();
 		std::cout << "Verified.\nEnsuring proper operator usage... \t\t\t\t";
 		ensureOperatorUsage();
 		std::cout << "Verified.\nEnsuring all symbols are separated by " <<
 			"operators... \t\t";
 		ensureSymbolsOperatorSeparated();
-		std::cout << "Verified.\nEnsuring all symbols are valid tokens..." <<
-			"\t\t\t";
-		ensureMeaningfulTokens();
 		std::cout << "Verified." << std::endl;
 	}
 	catch ( std::string msg )
@@ -495,6 +495,7 @@ void ParseLang::ensureOperatorUsage()
 				*/
 				if ( j - 1 < 0 || ( ( isOperator( rule.at( j + 1 ) ) && 
 					rule.at( j + 1 ).compare( "(" ) != 0 &&
+					rule.at( j + 1 ).compare( "#" ) != 0 &&					
 					rule.at( j + 1 ).compare( "*" ) != 0 ) ||
 					( isOperator( rule.at( j - 1 ) ) &&
 					rule.at( j - 1 ).compare( ")" ) != 0 ) ) )
@@ -531,6 +532,7 @@ void ParseLang::ensureOperatorUsage()
 					( !isOperator( rule.at( j - 1 ) ) &&
 					!isStringLiteral( rule.at( j - 1 ) ) &&
 					!isKeyword( rule.at( j - 1 ) ) &&
+					!isRuleName( rule.at( j - 1 ) ) && 
 					castStringToInt( rule.at( j - 1 ) ) == 0 ) ) )
 				{
 					std::string error = "Error in definition of ";
@@ -916,7 +918,7 @@ void ParseLang::parseDescription( std::string parseFile )
 					error += statement.getName();
 					error += ":\n\t";
 					error += "Quotes must enclose exactly one literal token; ";
-					error += "Malformed string literal found at token\n\t";
+					error += "Malformed string literal\n\tfound at token ";
 					error += castIntToString( i );
 					error += ", ";
 					error += tokens.at(i);

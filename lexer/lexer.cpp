@@ -35,20 +35,22 @@ std::vector<std::string> tokenizeFile2( std::string fileName )
 		// Loop over characters of line
 		for ( int j = 0; j < lines.at(i).size(); j++ )
 		{
-			if ( lines.at(i).at(j) == ' ' && temp.size() == 0 )
+			if ( ( lines.at(i).at(j) == ' ' || lines.at(i).at(j) == '\t' )
+				&& temp.size() == 0 )
 			{
-				// Skip spaces when we aren't yet building a token
+				// Skip whitespace when we aren't yet building a token
 				continue;
 			}
 			if ( lines.at(i).at(j) == '"' && temp.size() == 0 )
 			{
 				do
 				{
-					if ( lines.at(i).at(j) == '\\' && 
+					// Backslash will escape anything in the string
+					if ( lines.at(i).at(j) == '\\' /*&& 
 						j < lines.at(i).size() - 1 && 
-						lines.at(i).at(j+1) == '"' )
+						lines.at(i).at(j+1) == '"'*/ )
 					{
-						// Here we add the quotes character to the token,
+						// Here we add the escaped character to the token,
 						// skipping the backslash that escaped it
 						temp += lines.at(i).at(++j);
 						j++;
@@ -57,14 +59,15 @@ std::vector<std::string> tokenizeFile2( std::string fileName )
 					{
 						temp += lines.at(i).at(j++);
 					}
-				} while ( lines.at(i).at(j) != '"' );
+				} while ( j < lines.at(i).size() && lines.at(i).at(j) != '"' );
 				temp += '"';
 				tokens.push_back( temp );
 				temp.clear();
 				continue;
 			}
 			// Space delimited
-			if ( lines.at(i).at(j) == ' ' && temp.size() != 0 )
+			if ( ( lines.at(i).at(j) == ' ' || lines.at(i).at(j) == '\t' ) 
+				&& temp.size() != 0 )
 			{
 				// Push the token received. Must be a token because space-
 				// delimited
@@ -111,6 +114,12 @@ std::vector<std::string> tokenizeFile2( std::string fileName )
 	tokens = internalTokenizeFix( tokens );
 	// Remove empty tokens ( size zero )
 	tokens = internalRemoveNullTokens( tokens );
+	/*
+	for ( int i = 0; i < tokens.size(); i++ )
+	{
+		std::cout << tokens.at(i) << std::endl;
+	}
+	*/
 	// Return tokenized result
 	return tokens;
 }

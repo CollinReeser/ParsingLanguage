@@ -27,3 +27,8 @@ force_one = newsym > *newsym > "apple";
 force_four = symbol > *(#"123") | NULL;
 
 force_five = simple | simple | sdfsdfksjh;
+
+
+
+
+
