@@ -88,6 +88,7 @@ void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
 		ensureValidStart();
 		ensureOperatorUsage();
 		ensureSymbolsOperatorSeparated();
+		ensureMeaningfulTokens();
 		return;
 	}
 	try
@@ -111,6 +112,9 @@ void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
 		std::cout << "Verified.\nEnsuring all symbols are separated by " <<
 			"operators... \t\t";
 		ensureSymbolsOperatorSeparated();
+		std::cout << "Verified.\nEnsuring all symbols are valid tokens..." <<
+			"\t\t\t";
+		ensureMeaningfulTokens();
 		std::cout << "Verified." << std::endl;
 	}
 	catch ( std::string msg )
@@ -139,16 +143,33 @@ void ParseLang::ensureMeaningfulTokens()
 		for ( int j = 0; j < (int) rule.size(); j++ )
 		{
 			if ( !isKeyword( rule.at(j) ) && !isOperator( rule.at(j) ) 
-				&& !isStringLiteral( rule.at(j) ) && !isRuleName(rule.at(j) ) )
+				&& !isStringLiteral( rule.at(j) ) && !isRuleName( rule.at(j) ) 
+				&& castStringToInt( rule.at(j) ) == 0 )
 			{
 				std::string error = "Error in definition of ";
 				error += statements.at(i).getName();
 				error += ":\n\t";
 				error += "Non-operator, non-keyword, non-rule-name, ";
-				error += "non-literal found at token ";
+				error += "non-literal found at token\n\t";
 				error += castIntToString(j);
-				error += ".\n\tDid you mean to treat the token as a string ";
-				error += "literal or did you spell a rule name wrong?";
+				error += ". Did you mean to treat the token as a string ";
+				error += "literal? Did you spell a\n\trule-name wrong?";
+				error += "\n\tFound as: [";
+				error += rule.at( j );
+				error += "].";
+				throw error;
+			}
+			else if ( castStringToInt( rule.at(j) ) != 0 && j > 0 && 
+				rule.at(j-1).compare( "@" ) != 0 )
+			{
+				std::string error = "Error in definition of ";
+				error += statements.at(i).getName();
+				error += ":\n\t";
+				error += "Non-operator, non-keyword, non-rule-name, ";
+				error += "non-literal found at token\n\t";
+				error += castIntToString(j);
+				error += ". Did you mean to treat the token as a string ";
+				error += "literal? Did you spell a\n\trule-name wrong?";
 				error += "\n\tFound as: [";
 				error += rule.at( j );
 				error += "].";

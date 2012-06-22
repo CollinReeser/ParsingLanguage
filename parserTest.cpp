@@ -26,12 +26,12 @@ int main( int argc , char** argv )
 	}
 	if ( argc == 2 )
 	{
-		ParseLang parse( argv[1] , tokenizeFile );
+		ParseLang parse( argv[1] );
 		//parse.printPassOne();
 	}
 	if ( argc >= 3 )
 	{
-		ParseLang parse( argv[1] , argv[2] , tokenizeFile );
+		ParseLang parse( argv[1] , argv[2] );
 		//parse.printPassOne();
 	}
 	/*
