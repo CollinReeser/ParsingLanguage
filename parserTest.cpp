@@ -36,6 +36,24 @@ int main( int argc , char** argv )
 		//parse.printPassOne();
 	}
 	/*
+	std::vector<std::string> strings;
+	std::string token = "ample";
+	std::vector<std::string> results;
+	strings.push_back("apple");
+	strings.push_back("rappa");
+	strings.push_back("tree");
+	strings.push_back("trample");
+	strings.push_back("sample");
+	strings.push_back("maple");
+	//strings.push_back("ample");
+	std::cout << "Comparing " << token << " against set.\n" << std::endl;
+	results = ParseLang::getSimilarTokens( strings , token );
+	for ( int i = 0; i < results.size(); i++ )
+	{
+		std::cout << results.at(i) << std::endl;
+	}
+	*/
+	/*
 	std::cout << "\n\n";
 	try
 	{

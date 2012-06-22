@@ -1,6 +1,17 @@
 
 #include "Statement.h"
 
+std::vector<std::string> Statement::getListRuleNames( 
+	const std::vector<Statement> statements )
+{
+	std::vector<std::string> names;
+	for ( int i = 0; i < statements.size(); i++ )
+	{
+		names.push_back( statements.at(i).getName() );
+	}
+	return names;
+}
+
 void Statement::setName( std::string name )
 {
 	Statement::name = name;

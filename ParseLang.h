@@ -30,6 +30,12 @@ public:
 	ParseLang( std::string parseFile );
 	ParseLang();
 	void printPassOne();
+	// This is a very poor implementation of some terribly designed algorithm
+	// that is supposed to take a list of strings and a token, and return a
+	// list of strings as a subset of the passed list of strings that is similar
+	// to the passed token
+	static std::vector<std::string> getSimilarTokens( 
+		std::vector<std::string> strings , std::string token );
 private:
 	void toplevelVerification( bool quiet , std::string parseFile );
 	void parseSourceFile( std::string sourcefile , 

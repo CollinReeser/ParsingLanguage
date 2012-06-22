@@ -27,6 +27,8 @@ public:
 	bool isNew();
 	bool isPermeate();
 	bool isCenter();
+	static std::vector<std::string> getListRuleNames( 
+		const std::vector<Statement> statements );
 	unsigned long long int getFlags();
 	//Operator overloading. We need copying
 	Statement& operator=( const Statement &other );

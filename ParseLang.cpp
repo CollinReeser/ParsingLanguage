@@ -1,5 +1,6 @@
 
 #include <vector>
+#include <set>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -155,6 +156,17 @@ void ParseLang::ensureMeaningfulTokens()
 				error += castIntToString(j);
 				error += ". Did you mean to treat the token as a string ";
 				error += "literal? Did you spell a\n\trule-name wrong?";
+				std::vector<std::string> simNames = ParseLang::getSimilarTokens(
+					Statement::getListRuleNames( statements ) , rule.at(j) );
+				if ( simNames.size() > 0 )
+				{
+					error += "\n\tRule-names similar to token:";
+					for ( int m = 0; m < simNames.size(); m++ )
+					{
+						error += "\n\t\t";
+						error += simNames.at(m);
+					}
+				}
 				error += "\n\tFound as: [";
 				error += rule.at( j );
 				error += "].";
@@ -1039,5 +1051,99 @@ bool ParseLang::matchRegex( std::string regexString , std::string tokenString )
 bool ParseLang::isStringLiteral( std::string token )
 {
 	return matchRegex( "^\"[^ \t\n]+\"$" , token );
+}
+
+std::vector<std::string> ParseLang::getSimilarTokens( 
+	std::vector<std::string> strings , std::string token )
+{
+	std::vector<std::string> simStrings;
+	// Not a long enough token to be worth the work
+	if ( token.size() <= 3 )
+	{
+		return simStrings;
+	}
+	// Terrible algorithm
+	for ( int i = 0; i < strings.size(); i++ )
+	{
+		// Not a long enough string to be worth the work
+		if ( strings.at(i).size() <= 3 )
+		{
+			continue;
+		}
+		// If they are the same length but one or two characters are different
+		int mistakes = 0;
+		// Loop over characters in strings
+		if ( token.size() == strings.at(i).size() )
+		{
+			for ( int j = 0; j < token.size(); j++ )
+			{
+				if ( token.at(j) != strings.at(i).at(j) )
+				{
+					mistakes++;
+				}
+			}
+			if ( mistakes <= 2 )
+			{
+				simStrings.push_back( strings.at(i) );
+				continue;
+			}
+		}
+		bool isSubstr = false;
+		// If they share a substring of length four. Terrible
+		for ( int j = 0; j < strings.at(i).size() - 3; j++ )
+		{
+			std::string temp = strings.at(i).substr( j , 4 );
+			for ( int k = 0; k < token.size() - 3; k++ )
+			{
+				if ( temp.compare( token.substr( k , 4 ) ) == 0 )
+				{
+					// They share a substr of length four
+					simStrings.push_back( strings.at(i) );
+					isSubstr = true;
+					break;
+				}
+			}
+			if ( isSubstr )
+			{
+				break;
+			}
+		}
+		if ( isSubstr )
+		{
+			continue;
+		}
+		// See if they share mostly the same characters
+		int misses = 0;
+		bool hit = false;
+		std::string temp = strings.at(i);
+		std::string temp2 = token;
+		for ( int j = 0; j < temp.size(); j++ )
+		{
+			for ( int k = 0; k < temp2.size(); k++ )
+			{
+				if ( temp.at(j) == temp2.at(k) )
+				{
+					temp.erase( j , 1 );
+					j--;
+					temp2.erase( k , 1 );
+					k--;
+					hit = true;
+					break;
+				}
+			}
+			if ( hit )
+			{
+				hit = false;
+				continue;
+			}
+			misses++;
+		}
+		if ( misses <= 2 )
+		{
+			simStrings.push_back( strings.at(i) );
+			continue;
+		}
+	}
+	return simStrings;
 }
 
