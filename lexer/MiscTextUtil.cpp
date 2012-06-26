@@ -5,14 +5,14 @@ bool SimpleTextUtil::isOperatorT( char operatorCandidate )
 {
 	switch ( operatorCandidate )
 	{
-		case '+':
-		case '-':
+		//case '+':
+		//case '-':
 		case '*':
-		case '/':
+		//case '/':
 		case '=':
 		case '(':
 		case ')':
-		case '<':
+		//case '<':
 		case '>':
 		case ';':
 		case '"':
@@ -26,11 +26,12 @@ bool SimpleTextUtil::isOperatorT( char operatorCandidate )
 		case '}':
 		case '|':
 		case '^':
-		case '~':
+		//case '~':
 		case ':':
 		case ',':
 		case '@':
 		case '#':
+		case '!':
 			return true;
 		default:
 			return false;

@@ -58,7 +58,11 @@ bool ParseLang::isOperator( std::string op )
 	{
 		return true;
 	}
-	else if ( op.compare( ";" ) == 0 || op.compare( "#" ) == 0)
+	else if ( op.compare( ";" ) == 0 || op.compare( "#" ) == 0 )
+	{
+		return true;
+	}
+	else if ( op.compare( "!" ) == 0 )
 	{
 		return true;
 	}
@@ -346,9 +350,8 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 			std::cout << "\n" << rule.at(j) << std::endl;
 			std::cout << i << " " << j << std::endl;
 			*/
-			if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) ) &&
-				rule.at(j).compare( "\"" ) != 0 && 
-				rule.at(j+1).compare( "\"" ) != 0 )
+			if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) ) ) //&&
+				//!isStringLiteral( rule.at(j) ) )
 			{
 				std::string error = "Error in definition of ";
 				error += statements.at(i).getName();
@@ -365,8 +368,7 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 				throw error;
 			}
 			else if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) ) 
-				&& rule.at(j).compare( "\"" ) == 0 &&
-				rule.at(j+1).compare( "\"" ) == 0 )
+				&& isStringLiteral( rule.at(j) ) )
 			{
 				std::string error = "Error in definition of ";
 				error += statements.at(i).getName();
@@ -473,17 +475,39 @@ void ParseLang::ensureOperatorUsage()
 				// open-paren, fail
 				if ( isOperator( rule.at( j + 1 ) ) && 
 					rule.at(j+1).compare( "(" ) != 0 &&
-					rule.at(j+1).compare( "#" ) != 0)
+					rule.at(j+1).compare( "#" ) != 0 &&
+					rule.at(j+1).compare( "!" ) != 0 )
 				{
 					std::string error = "Error in definition of ";
 					error += statements.at(i).getName();
 					error += ":\n\t";
-					error += "\"*\" operator misused at token ";
+					error += "* operator misused at token ";
 					error += castIntToString(j);
-					error += ", \"*\" must be left-attached to a symbol\n\t";
-					error += "or open-paren. Found left-attached to: \"";
+					error += ", * must be left-attached to a symbol\n\t";
+					error += "or open-paren. Found left-attached to: ";
 					error += rule.at( j + 1 );
-					error += "\".";
+					error += ".";
+					throw error;
+				}
+			}
+			else if ( rule.at(j).compare( "!" ) == 0 )
+			{
+				// If "*" is attached to something other than a symbol or an
+				// open-paren, fail
+				if ( isOperator( rule.at( j + 1 ) ) && 
+					rule.at(j+1).compare( "(" ) != 0 &&
+					rule.at(j+1).compare( "#" ) != 0 && 
+					rule.at(j+1).compare( "*" ) != 0 )
+				{
+					std::string error = "Error in definition of ";
+					error += statements.at(i).getName();
+					error += ":\n\t";
+					error += "! operator misused at token ";
+					error += castIntToString(j);
+					error += "; ! must be left-attached to a symbol\n\t";
+					error += "or open-paren. Found left-attached to: ";
+					error += rule.at( j + 1 );
+					error += ".";
 					throw error;
 				}
 			}
@@ -526,7 +550,8 @@ void ParseLang::ensureOperatorUsage()
 				if ( j - 1 < 0 || ( ( isOperator( rule.at( j + 1 ) ) && 
 					rule.at( j + 1 ).compare( "(" ) != 0 &&
 					rule.at( j + 1 ).compare( "*" ) != 0 &&
-					rule.at( j + 1 ).compare( "#" ) != 0 ) ||
+					rule.at( j + 1 ).compare( "#" ) != 0 &&
+					rule.at( j + 1 ).compare( "!" ) != 0 ) ||
 					( isOperator( rule.at( j - 1 ) ) &&
 					rule.at( j - 1 ).compare( ")" ) != 0 ) ||
 					( !isOperator( rule.at( j - 1 ) ) &&
