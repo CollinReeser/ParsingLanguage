@@ -45,6 +45,12 @@ symbol - Demands that a symbol exists identical to the symbol in the source file
 newsym - Adds the symbol in the source to the current symbol table, possibly
 	specified by the @ operator. If the symbol already exists in the symbol
 	table specified, parsing fails.
+arbsym - Whatever the symbol is, it is accepted, and is not added to or checked
+	against any symbol tables. Can be used in conjunction with # to limit
+	accepting to only certain symbols. Note that this is a dangerous keyword,
+	as arbsym appearing in any | delimited list will always accept a token and
+	yield a success for that sub-computation, except in the case where there are
+	no more tokens in the input.
 NULL - Simply means that it is possible for there to be nothing in a particular
 	section and for the rule to evaluate correctly. This has little meaning
 	without being in combination with the "|" operator, such that NULL will
@@ -78,6 +84,31 @@ Operators:
 	the ability to define many symbol tables on many levels of definition
 	processing all work in tandem, and the entire parsing definition file should
 	be considered for ramifications at any use of any of these capabilities.
+# - Operator that is only valid when left-affixed to a literal string (a string
+	of characters enclosed in double quotes). This operator denotes that the
+	symbol in the source being parsed should consist of only characters that
+	appear in the double quotes that # is affixed to. For example,
+	#"0123456789" will only accept tokens consisting exclusively of integer
+	characters, and will accept tokens like 1234 and 9753460. Additionally,
+	an #"" construct can be right-affixed to the newsym, arbsym or symbol 
+	keywords, wherein the symbols referenced against or added to symbol tables 
+	will only be valid if they ALSO satisfy the requirements set by #. Thus, 
+	syntax like symbol#"abcdef" and newsym@12#"12345qwerty" are both valid. 
+	Finally, this syntax also supports regex constructs, denoted by a beginning 
+	'r' in the # rule. For example, #"r\".*\"" will match any token that is a 
+	well-formed	literal string. Note that the quotes need to be escaped for 
+	technical reasons. Note that these regex constructs are implemented by the 
+	regex.h C header, and thus follow that syntax. Note that the initial 'r' 
+	that dictates the beginning of a regex rule can be escaped to mean a literal
+	'r', as in #"\rats" will match any string containing exclusively those
+	four letters in any combination.
+! - Can be left-affixed to a rule name, (), *, or #, with the effect of 
+	negating the result	of the computation it is affixed to. For example,
+	!( some_rule ) will yield a success for that sub-computation if some_rule
+	fails. Note that !*( some_rule ) probably isn't what you mean, since *
+	yields a success even on zero matches to the rule. !#"0123456789" will
+	yield a success for any token that contains no integral characters.
+
 
 
 Reserved names: 
@@ -112,6 +143,14 @@ Global Properties:
 	the influence of any of one or more @new properties from any level of
 	processing depth, @permeate allows access to the symbol tables that are
 	being masked by the @new declarations.
+@center - Is used to denote what parent symbol table to consider as the
+	starting symbol table. For example, @center means that the toplevel symbol
+	table is the first (and in this case only) symbol table to check for or
+	add symbols to, regardless of the depth of hierarchial symbol tables that
+	have been created. @center:1 means that the symbol table just below the
+	top level symbol table should be considered the base, and @permeate:1
+	allows for accessing the next highest symbol table as well, which in this
+	case would be the top level symbol table.
 @syntax - This is a placeholder reminder for myself that I do need to actually
 	start supporting functionality that leads to the "generates an abstract
 	syntax tree" bit of the requirements stated at the top of this file.

@@ -21,11 +21,15 @@ intLit @new:255 @permeate:1 @center:255 = "the" > "dragon" > #"1234567890";
 
 force_one = newsym > *newsym > "apple";
 
-//force_two = "apple" symbol;
+//force_two = "apple" arbsym;
 
-//force_three = symbol "apple";
+//force_three = arbsym "apple";
 
-force_four = symbol > !*!!(#"123") | NULL;
+force_four = symbol > !*!(#"123") | NULL;
+
+force_whatever = #"1234567890" > newsym@32!#"1234567890" > !(force_four);
+
+force_double = arbsym#"123";
 
 //force_five = simple | simple | sdfsdfksjh;
 

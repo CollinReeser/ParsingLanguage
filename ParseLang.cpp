@@ -76,7 +76,8 @@ bool ParseLang::isKeyword( std::string keyword )
 	{
 		return true;
 	}
-	if ( keyword.compare( "NULL" ) == 0 )
+	else if ( keyword.compare( "NULL" ) == 0 ||
+			keyword.compare( "arbsym" ) == 0 )
 	{
 		return true;
 	}
@@ -148,11 +149,11 @@ void ParseLang::ensureMeaningfulTokens()
 		std::vector<std::string> rule = statements.at(i).getRule();
 		for ( int j = 0; j < (int) rule.size(); j++ )
 		{
-			if ( !isKeyword( rule.at(j) ) && !isOperator( rule.at(j) ) 
-				&& !isStringLiteral( rule.at(j) ) && !isRuleName( rule.at(j) ) 
+			if ( !isKeyword( rule.at(j) ) && !isOperator( rule.at(j) )
+				&& !isStringLiteral( rule.at(j) ) && !isRuleName( rule.at(j) )
 				&& castStringToInt( rule.at(j) ) == 0 )
 			{
-				std::string error = "Error in definition of ";
+				std::string error = "  Error in definition of ";
 				error += statements.at(i).getName();
 				error += ":\n\t";
 				error += "Non-operator, non-keyword, non-rule-name, ";
@@ -176,10 +177,10 @@ void ParseLang::ensureMeaningfulTokens()
 				error += "].";
 				throw error;
 			}
-			else if ( castStringToInt( rule.at(j) ) != 0 && j > 0 && 
+			else if ( castStringToInt( rule.at(j) ) != 0 && j > 0 &&
 				rule.at(j-1).compare( "@" ) != 0 )
 			{
-				std::string error = "Error in definition of ";
+				std::string error = "  Error in definition of ";
 				error += statements.at(i).getName();
 				error += ":\n\t";
 				error += "Non-operator, non-keyword, non-rule-name, ";
@@ -208,7 +209,7 @@ bool ParseLang::isRuleName( std::string token )
 	return false;
 }
 
-void parseSourceFile( std::string sourcefile , 
+void parseSourceFile( std::string sourcefile ,
 	std::vector<std::string> (*lexer_function)(std::string) )
 {
 	// Use either the default or user-defined lexing function to tokenize the
@@ -216,7 +217,7 @@ void parseSourceFile( std::string sourcefile ,
 	std::vector<std::string> tokens = lexer_function( sourcefile );
 
 	// Here, do the algorithm for parsing the source file
-	
+
 
 	return;
 }
@@ -298,17 +299,17 @@ void ParseLang::mergeStatementList( std::string filename )
 		error += "] could not be ";
 		error += "parsed. This may be because\n\tthe file does not exist. ";
 		error += "Run the parser in \"verify\" mode on the file\n\tto ";
-		error += "determine errors."; 
+		error += "determine errors.";
 		throw error;
 	}
 	for ( int i = 0; i < (int) tempParse.statements.size(); i++ )
 	{
 		for ( int j = 0; j < (int) statements.size(); j++ )
 		{
-			if ( tempParse.statements.at(i).getName().compare( 
+			if ( tempParse.statements.at(i).getName().compare(
 				statements.at(j).getName() ) == 0 )
 			{
-				std::string error = "Error in absorbtion of file [";
+				std::string error = "  Error in absorbtion of file [";
 				error += filename;
 				error += "]";
 				error += ":\n\t";
@@ -353,7 +354,7 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 			if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) ) ) //&&
 				//!isStringLiteral( rule.at(j) ) )
 			{
-				std::string error = "Error in definition of ";
+				std::string error = "  Error in definition of ";
 				error += statements.at(i).getName();
 				error += ":\n\t";
 				error += "Two symbols not separated by an operator found at";
@@ -367,10 +368,10 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 				error += "].";
 				throw error;
 			}
-			else if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) ) 
+			else if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) )
 				&& isStringLiteral( rule.at(j) ) )
 			{
-				std::string error = "Error in definition of ";
+				std::string error = "  Error in definition of ";
 				error += statements.at(i).getName();
 				error += ":\n\t";
 				error += "Two literal symbols not separated by an operator";
@@ -392,11 +393,11 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 				error += "].";
 				throw error;
 			}
-			else if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) ) 
+			else if ( !isOperator( rule.at(j) ) && !isOperator( rule.at(j+1) )
 				&& isKeyword( rule.at(j) ) &&
 				isStringLiteral( rule.at(j+1) ) )
 			{
-				std::string error = "Error in definition of ";
+				std::string error = "  Error in definition of ";
 				error += statements.at(i).getName();
 				error += ":\n\t";
 				error += "Keyword found followed by a literal symbol not ";
@@ -416,11 +417,11 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 			}
 			else if ( rule.at(j).compare(")") == 0 &&
 				( rule.at(j+1).compare("*") == 0 ||
-				isStringLiteral( rule.at(j+1) ) || 
-				isKeyword( rule.at(j+1) ) || 
+				isStringLiteral( rule.at(j+1) ) ||
+				isKeyword( rule.at(j+1) ) ||
 				rule.at(j+1).compare("(") == 0 ) )
 			{
-				std::string error = "Error in definition of ";
+				std::string error = "  Error in definition of ";
 				error += statements.at(i).getName();
 				error += ":\n\t";
 				error += "Parentheses-section followed by symbol not ";
@@ -436,12 +437,12 @@ void ParseLang::ensureSymbolsOperatorSeparated()
 			}
 			else if ( isKeyword( rule.at(j) ) &&
 				( rule.at(j+1).compare("*") == 0 ||
-				isStringLiteral( rule.at(j+1) ) || 
-				rule.at(j+1).compare("#") == 0 || 
-				isKeyword( rule.at(j+1) ) || 
+				isStringLiteral( rule.at(j+1) ) ||
+				/*rule.at(j+1).compare("#") == 0 ||*/
+				isKeyword( rule.at(j+1) ) ||
 				rule.at(j+1).compare("(") == 0 ) )
 			{
-				std::string error = "Error in definition of ";
+				std::string error = "  Error in definition of ";
 				error += statements.at(i).getName();
 				error += ":\n\t";
 				error += "Symbol followed by parentheses-section or symbol ";
@@ -473,12 +474,12 @@ void ParseLang::ensureOperatorUsage()
 			{
 				// If "*" is attached to something other than a symbol or an
 				// open-paren, fail
-				if ( isOperator( rule.at( j + 1 ) ) && 
+				if ( isOperator( rule.at( j + 1 ) ) &&
 					rule.at(j+1).compare( "(" ) != 0 &&
 					rule.at(j+1).compare( "#" ) != 0 &&
 					rule.at(j+1).compare( "!" ) != 0 )
 				{
-					std::string error = "Error in definition of ";
+					std::string error = "  Error in definition of ";
 					error += statements.at(i).getName();
 					error += ":\n\t";
 					error += "* operator misused at token ";
@@ -494,18 +495,19 @@ void ParseLang::ensureOperatorUsage()
 			{
 				// If "*" is attached to something other than a symbol or an
 				// open-paren, fail
-				if ( isOperator( rule.at( j + 1 ) ) && 
+				if ( ( isKeyword( rule.at( j + 1 ) ) ||
+					isOperator( rule.at( j + 1 ) ) ) &&
 					rule.at(j+1).compare( "(" ) != 0 &&
-					rule.at(j+1).compare( "#" ) != 0 && 
+					rule.at(j+1).compare( "#" ) != 0 &&
 					rule.at(j+1).compare( "*" ) != 0 )
 				{
-					std::string error = "Error in definition of ";
+					std::string error = "  Error in definition of ";
 					error += statements.at(i).getName();
 					error += ":\n\t";
 					error += "! operator misused at token ";
 					error += castIntToString(j);
-					error += "; ! must be left-attached to a symbol\n\t";
-					error += "or open-paren. Found left-attached to: ";
+					error += "; ! must be left-attached to a rule name,\n\t";
+					error += "open-paren, *, or #. Found left-attached to: ";
 					error += rule.at( j + 1 );
 					error += ".";
 					throw error;
@@ -517,14 +519,14 @@ void ParseLang::ensureOperatorUsage()
 				std::cout << rule.at( j - 1 ) << " " << rule.at( j ) <<
 					" " << rule.at( j + 1 ) << std::endl;
 				*/
-				if ( j - 1 < 0 || ( ( isOperator( rule.at( j + 1 ) ) && 
+				if ( j - 1 < 0 || ( ( isOperator( rule.at( j + 1 ) ) &&
 					rule.at( j + 1 ).compare( "(" ) != 0 &&
-					rule.at( j + 1 ).compare( "#" ) != 0 &&					
+					rule.at( j + 1 ).compare( "#" ) != 0 &&
 					rule.at( j + 1 ).compare( "*" ) != 0 ) ||
 					( isOperator( rule.at( j - 1 ) ) &&
 					rule.at( j - 1 ).compare( ")" ) != 0 ) ) )
 				{
-					std::string error = "Error in definition of ";
+					std::string error = "  Error in definition of ";
 					error += statements.at(i).getName();
 					error += ":\n\t";
 					error += "\"|\" operator misused at token ";
@@ -547,7 +549,7 @@ void ParseLang::ensureOperatorUsage()
 				std::cout << rule.at( j - 1 ) << " " << rule.at( j ) <<
 					" " << rule.at( j + 1 ) << std::endl;
 				*/
-				if ( j - 1 < 0 || ( ( isOperator( rule.at( j + 1 ) ) && 
+				if ( j - 1 < 0 || ( ( isOperator( rule.at( j + 1 ) ) &&
 					rule.at( j + 1 ).compare( "(" ) != 0 &&
 					rule.at( j + 1 ).compare( "*" ) != 0 &&
 					rule.at( j + 1 ).compare( "#" ) != 0 &&
@@ -557,10 +559,10 @@ void ParseLang::ensureOperatorUsage()
 					( !isOperator( rule.at( j - 1 ) ) &&
 					!isStringLiteral( rule.at( j - 1 ) ) &&
 					!isKeyword( rule.at( j - 1 ) ) &&
-					!isRuleName( rule.at( j - 1 ) ) && 
+					!isRuleName( rule.at( j - 1 ) ) &&
 					castStringToInt( rule.at( j - 1 ) ) == 0 ) ) )
 				{
-					std::string error = "Error in definition of ";
+					std::string error = "  Error in definition of ";
 					error += statements.at(i).getName();
 					error += ":\n\t";
 					error += "\">\" operator misused at token ";
@@ -586,7 +588,7 @@ void ParseLang::ensureOperatorUsage()
 					castStringToInt( rule.at(j+1) ) <= 0 ||
 					castStringToInt( rule.at(j+1) ) > 255 )
 				{
-					std::string error = "Error in definition of ";
+					std::string error = "  Error in definition of ";
 					error += statements.at(i).getName();
 					error += ":\n\t";
 					error += "\"@\" operator misused at token ";
@@ -608,22 +610,25 @@ void ParseLang::ensureOperatorUsage()
 				//std::cout << "\tEnter octothorpe" << std::endl;
 				// If "*" is attached to something other than a symbol or an
 				// open-paren, fail
-				
-				if ( rule.at(j+1).at(0) != '"' )
+
+				if ( rule.at(j+1).at(0) != '"' ||
+					( j - 1 > -1 && rule.at(j-1).compare( "NULL" ) == 0 ) )
 				/*
 				if ( j - 1 < 0 || ( rule.at(j-1).compare("symbol") != 0 &&
 					rule.at(j-1).compare("newsym") != 0 ) ||
 					( castStringToInt( rule.at(j-1) ) <= 0 ||
-					castStringToInt( rule.at(j-1) ) > 255 ) ) 
+					castStringToInt( rule.at(j-1) ) > 255 ) )
 				*/
 				{
-					std::string error = "Error in definition of ";
+					std::string error = "  Error in definition of ";
 					error += statements.at(i).getName();
 					error += ":\n\t";
-					error += "\"@\" operator misused at token ";
+					error += "\"#\" operator misused at token ";
 					error += castIntToString(j);
-					error += ", \"@\" must follow \"symbol\" or \"newsym\"\n\t";
-					error += "and must precede an integer, 1-255.";
+					error += ", \"#\" must precede a literal string,\n\t";
+					error += "and can optionally follow exclusively newsym, ";
+					error += "arbsym or symbol, with or\n\twithout ";
+					error += "an @ qualifier.";
 					error += "\n\tFound as: [";
 					error += rule.at( j - 1 );
 					error += " ";
@@ -647,10 +652,10 @@ void ParseLang::ensureNoRuleDuplicates()
 	{
 		for ( int j = i + 1; j < (int) statements.size(); j++ )
 		{
-			if ( statements.at(i).getName().compare( 
+			if ( statements.at(i).getName().compare(
 				statements.at(j).getName() ) == 0 )
 			{
-				std::string error = "Error in definition of ";
+				std::string error = "  Error in definition of ";
 				error += statements.at(i).getName();
 				error += ":\n\t";
 				error += "Multiple definitions, rules ";
@@ -698,7 +703,7 @@ void ParseLang::ensureParentheses()
 					// the parentheses are empty
 					else if ( rule.at(k).compare( ")" ) == 0 )
 					{
-						std::string error = "Error in definition of ";
+						std::string error = "  Error in definition of ";
 						error += statements.at(i).getName();
 						error += ":\n\t";
 						error += "Found empty parentheses: \"()\" at tokens ";
@@ -716,7 +721,7 @@ void ParseLang::ensureParentheses()
 			{
 				if ( openParen == 0 )
 				{
-					std::string error = "Error in definition of ";
+					std::string error = "  Error in definition of ";
 					error += statements.at(i).getName();
 					error += ":\n\t";
 					error += "Found unopened close paren: \")\" at token ";
@@ -729,7 +734,7 @@ void ParseLang::ensureParentheses()
 		}
 		if ( openParen != closeParen )
 		{
-			std::string error = "Error in definition of ";
+			std::string error = "  Error in definition of ";
 			error += statements.at(i).getName();
 			error += ":\n\t";
 			error += "Found parentheses mis-match. (";
@@ -749,15 +754,15 @@ void ParseLang::ensureValidStart()
 	for ( int i = 0; i < (int) statements.size(); i++ )
 	{
 		/*
-		std::cout << "Token Zero: [" << statements.at(i).getRule().at(0) << 
-			"] at length: " << statements.at(i).getRule().at(0).size() << 
+		std::cout << "Token Zero: [" << statements.at(i).getRule().at(0) <<
+			"] at length: " << statements.at(i).getRule().at(0).size() <<
 			std::endl;
 		*/
-		if ( statements.at(i).getRule().at(0).compare( ">" ) == 0 || 
+		if ( statements.at(i).getRule().at(0).compare( ">" ) == 0 ||
 			statements.at(i).getRule().at(0).compare( "|" ) == 0 ||
 			statements.at(i).getRule().at(0).compare( "@" ) == 0 )
 		{
-			std::string error = "Error in definition of ";
+			std::string error = "  Error in definition of ";
 			error += statements.at(i).getName();
 			error += ":\n\t";
 			error += "Invalid start to rule. First token is ";
@@ -805,7 +810,7 @@ void ParseLang::parseDescription( std::string parseFile )
 					}
 					else if ( numSymbolTables <= 0 )
 					{
-						std::string error = "Error in definition of ";
+						std::string error = "  Error in definition of ";
 						error += statement.getName();
 						error += ":\n\t";
 						error += "@permeate cannot define less than 1 ";
@@ -814,7 +819,7 @@ void ParseLang::parseDescription( std::string parseFile )
 					}
 					else
 					{
-						std::string error = "Error in definition of ";
+						std::string error = "  Error in definition of ";
 						error += statement.getName();
 						error += ":\n\t";
 						error += "@new cannot define greater than 255 ";
@@ -840,7 +845,7 @@ void ParseLang::parseDescription( std::string parseFile )
 					}
 					else if ( numPermeations <= 0 )
 					{
-						std::string error = "Error in definition of ";
+						std::string error = "  Error in definition of ";
 						error += statement.getName();
 						error += ":\n\t";
 						error += "@permeate cannot define less than 1 ";
@@ -849,7 +854,7 @@ void ParseLang::parseDescription( std::string parseFile )
 					}
 					else
 					{
-						std::string error = "Error in definition of ";
+						std::string error = "  Error in definition of ";
 						error += statement.getName();
 						error += ":\n\t";
 						error += "@permeate cannot define greater than 255 ";
@@ -875,7 +880,7 @@ void ParseLang::parseDescription( std::string parseFile )
 					}
 					else if ( centerLocation <= 0 )
 					{
-						std::string error = "Error in definition of ";
+						std::string error = "  Error in definition of ";
 						error += statement.getName();
 						error += ":\n\t";
 						error += "@center cannot focus on symbol tables ";
@@ -884,7 +889,7 @@ void ParseLang::parseDescription( std::string parseFile )
 					}
 					else
 					{
-						std::string error = "Error in definition of ";
+						std::string error = "  Error in definition of ";
 						error += statement.getName();
 						error += ":\n\t";
 						error += "@center cannot focus on symbol tables ";
@@ -900,7 +905,7 @@ void ParseLang::parseDescription( std::string parseFile )
 			// Error
 			else
 			{
-				std::string error = "Error in definition of ";
+				std::string error = "  Error in definition of ";
 				error += statement.getName();
 				error += ":\n\t";
 				error += "Found @, got \"";
@@ -911,7 +916,7 @@ void ParseLang::parseDescription( std::string parseFile )
 		}
 		if ( tokens.at(i).compare( "=" ) != 0 )
 		{
-			std::string error = "Error in definition of ";
+			std::string error = "  Error in definition of ";
 				error += statement.getName();
 				error += ":\n\t";
 				error += "Found \"";
@@ -939,7 +944,7 @@ void ParseLang::parseDescription( std::string parseFile )
 				// contains no whitespace
 				if ( !matchRegex( "^\"[^ \t\n]+\"$" , tokens.at(i) ) )
 				{
-					std::string error = "Error in definition of ";
+					std::string error = "  Error in definition of ";
 					error += statement.getName();
 					error += ":\n\t";
 					error += "Quotes must enclose exactly one literal token; ";
@@ -964,7 +969,7 @@ void ParseLang::printPassOne()
 {
 	for ( int i = 0; i < (int) statements.size(); i++ )
 	{
-		std::cout << "Statement " << i << ", Name: " << 
+		std::cout << "Statement " << i << ", Name: " <<
 			statements.at(i).getName() << std::endl;
 		std::cout << "  Rule: ";
 		std::vector<std::string> rule = statements.at(i).getRule();
@@ -972,22 +977,22 @@ void ParseLang::printPassOne()
 		{
 			std::cout << rule.at(j) << " ";
 		}
-		std::cout << "\n  Flags: " <<  
-			"New sym table? " << ( ( statements.at(i).isNew() ) ? 
+		std::cout << "\n  Flags: " <<
+			"New sym table? " << ( ( statements.at(i).isNew() ) ?
 			"Yes; ":"No; " ) <<
-			"Permeates? " << ( ( statements.at(i).isPermeate() ) ? 
+			"Permeates? " << ( ( statements.at(i).isPermeate() ) ?
 			"Yes; " : "No; " ) <<
-			"Centered? " << ( ( statements.at(i).isCenter() ) ? 
+			"Centered? " << ( ( statements.at(i).isCenter() ) ?
 			"Yes; " : "No; " ) <<
 			"ST: " << (int)( SYMBOL_DEPTH( statements.at(i).getFlags() ) ) <<
-			" P: " << (int)( PERMEATE_DEPTH( statements.at(i).getFlags() ) ) << 
-			" C: " << (int)( CENTERING_SPOT( statements.at(i).getFlags() ) ) << 
+			" P: " << (int)( PERMEATE_DEPTH( statements.at(i).getFlags() ) ) <<
+			" C: " << (int)( CENTERING_SPOT( statements.at(i).getFlags() ) ) <<
 			"\n\n";
 	}
 	return;
 }
 
-bool ParseLang::matchOctothorpeString( std::string octostring , 
+bool ParseLang::matchOctothorpeString( std::string octostring ,
 	std::string token )
 {
 	bool success;
@@ -995,7 +1000,7 @@ bool ParseLang::matchOctothorpeString( std::string octostring ,
 	{
 		success = matchRegex( octostring.substr( 1 ) , token );
 	}
-	else if ( octostring.size() >= 2 && octostring.at(0) == '\\' && 
+	else if ( octostring.size() >= 2 && octostring.at(0) == '\\' &&
 		octostring.at(1) == 'r' )
 	{
 		success = matchChar( octostring.substr( 1 ) , token );
@@ -1040,7 +1045,6 @@ bool ParseLang::matchRegex( std::string regexString , std::string tokenString )
 	int ret;
 	char* msgbuf = (char*)malloc( len );
 
-	/* Compile regular expression */
 	ret = regcomp( &regex , regexString.c_str() , REG_EXTENDED );
 	if( ret )
 	{
@@ -1051,7 +1055,6 @@ bool ParseLang::matchRegex( std::string regexString , std::string tokenString )
 		throw errormsg;
 	}
 
-	/* Execute regular expression */
 	ret = regexec( &regex , tokenString.c_str() , 0 , 0 , 0 );
 	if( !ret )
 	{
@@ -1069,7 +1072,6 @@ bool ParseLang::matchRegex( std::string regexString , std::string tokenString )
 		regfree( &regex );
 		throw errormsg;
 	}
-	/* Free compiled regular expression if you want to use the regex_t again */
 	regfree( &regex );
 	free( msgbuf );
 	return success;
@@ -1080,7 +1082,7 @@ bool ParseLang::isStringLiteral( std::string token )
 	return matchRegex( "^\"[^ \t\n]+\"$" , token );
 }
 
-std::vector<std::string> ParseLang::getSimilarTokens( 
+std::vector<std::string> ParseLang::getSimilarTokens(
 	std::vector<std::string> strings , std::string token )
 {
 	std::vector<std::string> simStrings;
