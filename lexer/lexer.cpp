@@ -45,15 +45,47 @@ std::vector<std::string> tokenizeFile2( std::string fileName )
 			{
 				do
 				{
-					// Backslash will escape anything in the string
-					if ( lines.at(i).at(j) == '\\' /*&& 
+					// Backslash will escape quotes to be literal characters,
+					// \t to be a tab, \n to be a newline, and \[true newline]
+					// to consume all whitespace until the next character or end
+					// quote
+					if ( lines.at(i).at(j) == '\\' && 
 						j < lines.at(i).size() - 1 && 
-						lines.at(i).at(j+1) == '"'*/ )
+						lines.at(i).at(j+1) == '"' )
 					{
-						// Here we add the escaped character to the token,
+						// Here we add the escaped quote to the token,
 						// skipping the backslash that escaped it
 						temp += lines.at(i).at(++j);
 						j++;
+					}
+					else if ( lines.at(i).at(j) == '\\' && 
+						j < lines.at(i).size() - 1 && 
+						lines.at(i).at(j+1) == 'n' )
+					{
+						// Here we add the escaped quote to the token,
+						// skipping the backslash that escaped it
+						temp += '\n';
+						j += 2;
+					}
+					else if ( lines.at(i).at(j) == '\\' && 
+						j < lines.at(i).size() - 1 && 
+						lines.at(i).at(j+1) == 't' )
+					{
+						// Here we add the escaped quote to the token,
+						// skipping the backslash that escaped it
+						temp += '\t';
+						j += 2;
+					}
+					else if ( lines.at(i).at(j) == '\\' && 
+						j < lines.at(i).size() - 1 && 
+						lines.at(i).at(j+1) == '\n' )
+					{
+						while ( lines.at(i).at(++j) == ' ' || 
+								lines.at(i).at(++j) == '\n' ||
+								lines.at(i).at(++j) == '\t' )
+						{
+						}
+						//j++;
 					}
 					else
 					{
