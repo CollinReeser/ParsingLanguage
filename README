@@ -4,16 +4,16 @@ is to provide, at the very least, the facility to check that a source file is
 properly structured. More ambitiously, this project aims to provide some level
 of advanced source checking, supplying the ability to keep track of and make
 decisions based on whether certain symbols have been defined yet, and allowing
-for access to differing, hierarchial symbol tables to pull from and assign to,
+for access to differing, hierarchal symbol tables to pull from and assign to,
 all under programmer control. Ever more ambitiously, this project hopes to also
 yield a useful abstract syntax tree, the form of which would also be
 programmer-controlled.
 
 These are the syntax rules for the parsing language:
 
-A statement is made up of a name, properties, and the rule. The name is the 
+A statement is made up of a name, properties, and the rule. The name is the
 first portion of the statement, global properties follow, and the actual rule of
-the statment.
+the statement.
 
 Names can be anything not already reserved by the parsing environment for use to
 define special rules.
@@ -21,14 +21,26 @@ define special rules.
 Properties are denoted by a leading '@', and can be anything in the list of
 global properties. These properties are global only within the context of the
 rule being evaluated. Since rules are generally constructed by combining several
-other defined definitions, these properties propogate down to definitions used
+other defined definitions, these properties propagate down to definitions used
 in the rules. For example, the @new property provides the capability to define
 a new symbol table for the rule, and any sub-definitions. Any definition that
 is explored as part of the rule for a statement that contains a @new has access
 to the new symbol table produced as a result of the @new property.
 
-Rules themselves are made up of combinations of string literals, other 
-definitions, and special keywords, tied together in some way by operators. 
+Rules themselves are made up of combinations of string literals, other
+definitions, and special keywords, tied together in some way by operators.
+
+Note that string literals that are used to match against tokens in the source
+must contain no whitespace. However, string literals that are used to define an
+error or note message rule can consist of arbitrary characters, and that literal
+newlines in the string can be escaped with \ to produce clean code when messages
+are lengthy. Whitespace after the escaped newline and before any actual
+characters is stripped so that it is simple to write clean parsing code. For
+example, the string:
+"This is an example of escaping a literal newline: \
+		   This is useful."
+Will result in the message:
+"This is an example of escaping a literal newline: This is useful."
 
 Note that for any lists, the first token should be read literally. The hyphen
 exists only to provide separation between the token and the description for the
@@ -42,15 +54,18 @@ symbol - Demands that a symbol exists identical to the symbol in the source file
 	current context symbol table, followed by the logical parent symbol tables,
 	possibly following particular branches in the lineage if the @ operator is
 	used.
+
 newsym - Adds the symbol in the source to the current symbol table, possibly
 	specified by the @ operator. If the symbol already exists in the symbol
 	table specified, parsing fails.
+
 arbsym - Whatever the symbol is, it is accepted, and is not added to or checked
 	against any symbol tables. Can be used in conjunction with # to limit
 	accepting to only certain symbols. Note that this is a dangerous keyword,
 	as arbsym appearing in any | delimited list will always accept a token and
 	yield a success for that sub-computation, except in the case where there are
 	no more tokens in the input.
+
 NULL - Simply means that it is possible for there to be nothing in a particular
 	section and for the rule to evaluate correctly. This has little meaning
 	without being in combination with the "|" operator, such that NULL will
@@ -63,62 +78,88 @@ Operators:
 	operator. That is to say, there are several operators that allow the
 	processing of the definition to return to points previous to the operator
 	read, and this one specifically does not.
+
 | - Binary operator, can be chained with several sub-rules. This operator means
 	that of any number of combined sub-rules through use of one or more of these
 	"|" operators, at least one must be valid. This operator short circuits on
 	success.
-* - Unary operator. Must be tied to a single definition. Means that that 
+
+* - Unary operator. Must be tied to a single definition. Means that that
 	definition can apply zero or more times in that context, and should be
 	evaluated continuously until it fails to evaluate correctly.
+
 ; - Denotes the end of a statement.
+
 () - Sub-rules of any complexity can be enclosed in parentheses with the effect
-	that operators can be applied to the parenthised quantity and treated as a
+	that operators can be applied to the parenthesized quantity and treated as a
 	single sub-rule, with the exception of the "*" operator.
+
 @ - Unary operator. Outside of the context of the properties section, this
 	operator is right-affixed to any definitions that should search inside of
 	only specific symbol tables, assuming that more than one symbol table is
 	available. An integer value between 1 and 255 should immediately follow this
 	operator. Permeation combined with this operator allows for maintaining a
-	search through a specific branch of hierarchial symbol tables. That said,
+	search through a specific branch of hierarchal symbol tables. That said,
 	the programmer must be aware that use of permeation and this operator and
 	the ability to define many symbol tables on many levels of definition
 	processing all work in tandem, and the entire parsing definition file should
 	be considered for ramifications at any use of any of these capabilities.
+
 # - Operator that is only valid when left-affixed to a literal string (a string
 	of characters enclosed in double quotes). This operator denotes that the
 	symbol in the source being parsed should consist of only characters that
 	appear in the double quotes that # is affixed to. For example,
 	#"0123456789" will only accept tokens consisting exclusively of integer
 	characters, and will accept tokens like 1234 and 9753460. Additionally,
-	an #"" construct can be right-affixed to the newsym, arbsym or symbol 
-	keywords, wherein the symbols referenced against or added to symbol tables 
-	will only be valid if they ALSO satisfy the requirements set by #. Thus, 
-	syntax like symbol#"abcdef" and newsym@12#"12345qwerty" are both valid. 
-	Finally, this syntax also supports regex constructs, denoted by a beginning 
-	'r' in the # rule. For example, #"r\".*\"" will match any token that is a 
-	well-formed	literal string. Note that the quotes need to be escaped for 
-	technical reasons. Note that these regex constructs are implemented by the 
-	regex.h C header, and thus follow that syntax. Note that the initial 'r' 
+	an #"" construct can be right-affixed to the newsym, arbsym or symbol
+	keywords, wherein the symbols referenced against or added to symbol tables
+	will only be valid if they ALSO satisfy the requirements set by #. Thus,
+	syntax like symbol#"abcdef" and newsym@12#"12345qwerty" are both valid.
+	Finally, this syntax also supports regex constructs, denoted by a beginning
+	'r' in the # rule. For example, #"r\".*\"" will match any token that is a
+	well-formed	literal string. Note that the quotes need to be escaped for
+	technical reasons. Note that these regex constructs are implemented by the
+	regex.h C header, and thus follow that syntax. Note that the initial 'r'
 	that dictates the beginning of a regex rule can be escaped to mean a literal
 	'r', as in #"\rats" will match any string containing exclusively those
 	four letters in any combination.
-! - Can be left-affixed to a rule name, (), *, or #, with the effect of 
+
+! - Can be left-affixed to a rule name, (), *, or #, with the effect of
 	negating the result	of the computation it is affixed to. For example,
 	!( some_rule ) will yield a success for that sub-computation if some_rule
 	fails. Note that !*( some_rule ) probably isn't what you mean, since *
 	yields a success even on zero matches to the rule. !#"0123456789" will
 	yield a success for any token that contains no integral characters.
 
+: - Must follow "symbol" or "newsym", and must precede a string literal that
+	denotes the name of a symbol table to be created or referred to. If :
+	is encountered during interpretation of the parsing file and the named
+	symbol table does not yet exist, it is created on the fly, and then persists
+	for the duration of the interpretation of the parsing file. The name of the
+	symbol table to create or refer to must be enclosed in quotes, such that
+	symbol:"name" or newsym:"name" is the correct syntax.
+
+^ - Must be left-affixed to a message rulename, and must be right-affixed to
+	any of "symbol", "newsym", ')', a string literal, a rulename, or
+	symbol or newsym combined with a named symbol table (see ':'). This operator
+	is the key to notifications and error messages on success or failure
+	(respectively) at any stage of parsing. That is, if ^ is attached to a
+	notification message rule, and the parsing section it is right-attached to
+	succeeds, the message at the denoted rule is printed before parsing
+	continues. Conversely, if ^	is attached to an error message rule, and the
+	parsing section it is attached to fails, the denoted error message is
+	printed before parsing is terminated.
 
 
-Reserved names: 
+
+Reserved rulenames:
 TOPLEVEL - This name refers to the rule that is evaluated first when actual
 	parsing of the input file is performed.
-	
+
 include_rules - This name refers to a rule that earns special syntax, purely
 	because it would be silly to constrain this particular rule to the syntax
 	normally expected. This rule takes the form:
-	"include_rules = file1 file2 ...;", where each file is should corrospond to
+	"include_rules = file1 file2 ...;", where each file is should correspond to
 	a text file in the same directory that itself contains statements in this
 	programming language. The idea is that the include_rules statement will
 	pull from those files their statements, and add them to the list of
@@ -136,6 +177,7 @@ Global Properties:
 	Note that @new must define at least one new symbol table, but cannot define
 	more than 255 symbol tables. Unacceptable uses: "@new:garbage", "@new:-1",
 	"@new:0", "@new:256".
+
 @permeate - Can either be used alone or with a syntax that allows defining
 	greater depths of permeation. This property allows a rule to search for
 	symbols in symbol tables that are "higher" than the symbol table(s)
@@ -143,21 +185,33 @@ Global Properties:
 	the influence of any of one or more @new properties from any level of
 	processing depth, @permeate allows access to the symbol tables that are
 	being masked by the @new declarations.
+
 @center - Is used to denote what parent symbol table to consider as the
 	starting symbol table. For example, @center means that the toplevel symbol
 	table is the first (and in this case only) symbol table to check for or
-	add symbols to, regardless of the depth of hierarchial symbol tables that
+	add symbols to, regardless of the depth of hierarchal symbol tables that
 	have been created. @center:1 means that the symbol table just below the
 	top level symbol table should be considered the base, and @permeate:1
 	allows for accessing the next highest symbol table as well, which in this
 	case would be the top level symbol table.
+
 @syntax - This is a placeholder reminder for myself that I do need to actually
 	start supporting functionality that leads to the "generates an abstract
 	syntax tree" bit of the requirements stated at the top of this file.
-	
-	
+
+@error - Denotes that this is in fact an error message "rule" and should only
+	contain a single string literal token as the error message to be printed
+	when requested. @error is mutually exclusive to all other properties
+	and will generate an error if used in conjunction with other properties.
+
+@note - Denotes that this is in fact a notification "rule" and should only
+	contain a single string literal token as the note message to be printed
+	when requested. @note is mutually exclusive to all other properties
+	and will generate an error if used in conjunction with other properties.
+
+
 C++ style single and multi-line comments are supported as expected.
-	
+
 Example simple parsing language files (The open and close braces represent the
 	beginning and ending of the files, but do not appear in the source):
 
@@ -197,13 +251,15 @@ boolAssign = symbol@2 > "=" > bool_type > end;
 }
 
 Now here are a few ways to define your own useful operations that are not core
-to the langauge:
+to the language:
 {
 // This defines a rule that acts as "symbol", but if that fails then it acts
 // as "newsym". This is useful for when you want to accept a symbol regardless
-// of whether it has been seen before
+// of whether it has been seen before, but still want to track it ( contrast
+// with the keyword "arbsym" )
 ternsym = ( symbol | newsym ); // Note that order doesn't matter here with "|"
 }
+
 {
 // This defines a rule that accepts ONE or more new symbols (in contrast to
 // use of "*" by itself, which accepts zero or more)

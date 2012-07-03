@@ -2,8 +2,17 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <sstream>
 #include "lexer.h"
 #include "SimpleTextUtil.h"
+
+// Takes an int and returns a string representation
+static std::string castIntToString( int val )
+{
+	std::stringstream ss;
+	ss << val;
+	return ss.str();
+}
 
 // This is as the other, but also ensures that string literals are treated
 // as single tokens
@@ -49,8 +58,8 @@ std::vector<std::string> tokenizeFile2( std::string fileName )
 					// \t to be a tab, \n to be a newline, and \[true newline]
 					// to consume all whitespace until the next character or end
 					// quote
-					if ( lines.at(i).at(j) == '\\' && 
-						j < lines.at(i).size() - 1 && 
+					if ( lines.at(i).at(j) == '\\' &&
+						j < lines.at(i).size() - 1 &&
 						lines.at(i).at(j+1) == '"' )
 					{
 						// Here we add the escaped quote to the token,
@@ -58,8 +67,8 @@ std::vector<std::string> tokenizeFile2( std::string fileName )
 						temp += lines.at(i).at(++j);
 						j++;
 					}
-					else if ( lines.at(i).at(j) == '\\' && 
-						j < lines.at(i).size() - 1 && 
+					else if ( lines.at(i).at(j) == '\\' &&
+						j < lines.at(i).size() - 1 &&
 						lines.at(i).at(j+1) == 'n' )
 					{
 						// Here we add the escaped quote to the token,
@@ -67,8 +76,8 @@ std::vector<std::string> tokenizeFile2( std::string fileName )
 						temp += '\n';
 						j += 2;
 					}
-					else if ( lines.at(i).at(j) == '\\' && 
-						j < lines.at(i).size() - 1 && 
+					else if ( lines.at(i).at(j) == '\\' &&
+						j < lines.at(i).size() - 1 &&
 						lines.at(i).at(j+1) == 't' )
 					{
 						// Here we add the escaped quote to the token,
@@ -76,14 +85,24 @@ std::vector<std::string> tokenizeFile2( std::string fileName )
 						temp += '\t';
 						j += 2;
 					}
-					else if ( lines.at(i).at(j) == '\\' && 
-						j < lines.at(i).size() - 1 && 
-						lines.at(i).at(j+1) == '\n' )
+					// FileToLines appends a space at the end of each line,
+					// so we account for that here
+					else if ( lines.at(i).at(j) == '\\' &&
+						j + 2 == lines.at(i).size() &&
+						lines.at(i).at(j+1) == ' ' )
 					{
-						while ( lines.at(i).at(++j) == ' ' || 
-								lines.at(i).at(++j) == '\n' ||
-								lines.at(i).at(++j) == '\t' )
+						i++;
+						j = 0;
+						while ( lines.at(i).at(j) == ' ' ||
+								lines.at(i).at(j) == '\n' ||
+								lines.at(i).at(j) == '\t' )
 						{
+							j++;
+							if ( j == lines.at(i).size() )
+							{
+								j = 0;
+								i++;
+							}
 						}
 						//j++;
 					}
@@ -92,13 +111,24 @@ std::vector<std::string> tokenizeFile2( std::string fileName )
 						temp += lines.at(i).at(j++);
 					}
 				} while ( j < lines.at(i).size() && lines.at(i).at(j) != '"' );
+				if ( j == lines.at(i).size() )
+				{
+					std::string error = "Error in lexer at line:column ";
+					error += castIntToString( i + 1 );
+					error += ":";
+					error += castIntToString( j + 1 );
+					error += ":\n\tMalformed literal string detected: ";
+					error += "No end-quote token.\n\tDid you forget to escape ";
+					error += "a literal newline?";
+					throw error;
+				}
 				temp += '"';
 				tokens.push_back( temp );
 				temp.clear();
 				continue;
 			}
 			// Space delimited
-			if ( ( lines.at(i).at(j) == ' ' || lines.at(i).at(j) == '\t' ) 
+			if ( ( lines.at(i).at(j) == ' ' || lines.at(i).at(j) == '\t' )
 				&& temp.size() != 0 )
 			{
 				// Push the token received. Must be a token because space-
@@ -244,7 +274,7 @@ std::vector<std::string> tokenizeFile( std::string fileName )
 // This function generates complex operators from adjacent simple ones
 // TODO: Need to handle the case where "1234 + -56", which is tokenized to
 // "1234","+","-","56" is correctly tokenized to "1234","+","-56"
-std::vector<std::string> internalTokenizeFix( 
+std::vector<std::string> internalTokenizeFix(
 	std::vector<std::string> tokens )
 {
 	// Loop over the tokens and fix them
@@ -368,7 +398,7 @@ std::vector<std::string> internalTokenizeFix(
 	return tokens;
 }
 
-std::vector<std::string> internalRemoveWhitespace( 
+std::vector<std::string> internalRemoveWhitespace(
 	std::vector<std::string> tokens )
 {
 	SimpleTextUtil util;
@@ -382,7 +412,7 @@ std::vector<std::string> internalRemoveWhitespace(
 }
 
 // Remove null token entries
-std::vector<std::string> internalRemoveNullTokens( 
+std::vector<std::string> internalRemoveNullTokens(
 	std::vector<std::string> tokens )
 {
 	for ( int i = 0; i < tokens.size(); i++ )

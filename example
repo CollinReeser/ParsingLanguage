@@ -31,7 +31,14 @@ force_whatever = #"1234567890" > newsym@32!#"1234567890" > !(force_four);
 
 force_double = arbsym#"123";
 
+force_skdjfh = symbol;
+
 //force_five = simple | simple | sdfsdfksjh;
+
+error_log @error = "ERROR \
+					WOO.";
+
+force_eleventy = symbol:"table" ^ error_log;
 
 
 

@@ -34,12 +34,12 @@ public:
 	// that is supposed to take a list of strings and a token, and return a
 	// list of strings as a subset of the passed list of strings that is similar
 	// to the passed token
-	static std::vector<std::string> getSimilarTokens( 
+	static std::vector<std::string> getSimilarTokens(
 		std::vector<std::string> strings , std::string token );
 private:
 	void toplevelVerification( bool quiet , std::string parseFile );
-	void parseSourceFile( std::string sourcefile , 
-		std::vector<std::string> (*lexer_function)(std::string) = 
+	void parseSourceFile( std::string sourcefile ,
+		std::vector<std::string> (*lexer_function)(std::string) =
 		tokenizeFile2 );
 	// This builds a table of raw statements, parsing the name and properties
 	// of the statement, and then simply throwing all of the tokens of the rule
@@ -72,9 +72,15 @@ private:
 	// This returns true if the string passed in is considered a string literal
 	// containing no whitespace
 	bool isStringLiteral( std::string token );
+	// This returns true if the string passed in is considered a string literal
+	// containing anything
+	bool isPermissiveStringLiteral( std::string token );
 	// Checks if the string is the name of an established rule in the list of
 	// statements
 	bool isRuleName( std::string token );
+	// Checks if the string is the name of an established msg rule in the list
+	// of statements
+	bool isMsgName( std::string token );
 	// This takes in a regular expression and a string to run the regular
 	// expression on, and returns true if the string was matched by the regular
 	// expression

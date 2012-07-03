@@ -1,7 +1,7 @@
 
 #include "Statement.h"
 
-std::vector<std::string> Statement::getListRuleNames( 
+std::vector<std::string> Statement::getListRuleNames(
 	const std::vector<Statement> statements )
 {
 	std::vector<std::string> names;
@@ -55,6 +55,18 @@ void Statement::setCenterLocation( int num )
 	return;
 }
 
+void Statement::setIsErrorMsg()
+{
+	flags |= ERROR;
+	return;
+}
+
+void Statement::setIsNoteMsg()
+{
+	flags |= NOTE;
+	return;
+}
+
 bool Statement::isNew()
 {
 	return ( flags >> 63 ) & 0b1;
@@ -68,6 +80,16 @@ bool Statement::isPermeate()
 bool Statement::isCenter()
 {
 	return ( flags >> 61 ) & 0b1;
+}
+
+bool Statement::isErrorMsg()
+{
+	return ( flags >> 60 ) & 0b1;
+}
+
+bool Statement::isNoteMsg()
+{
+	return ( flags >> 59 ) & 0b1;
 }
 
 unsigned long long int Statement::getFlags()

@@ -9,7 +9,15 @@ int main( int argc , char** argv )
 {
 	if ( argc == 2 )
 	{
-		std::vector<std::string> tokens = tokenizeFile2( argv[1] );
+		std::vector<std::string> tokens;
+		try
+		{
+			tokens = tokenizeFile2( argv[1] );
+		}
+		catch ( std::string msg )
+		{
+			std::cout << msg << std::endl;
+		}
 		for ( int i = 0; i < tokens.size(); i++ )
 		{
 			std::cout << tokens.at(i) << std::endl;

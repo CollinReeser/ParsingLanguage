@@ -11,7 +11,7 @@
 #include "lexer/lexer.h"
 
 // Takes an int and returns a string representation
-std::string castIntToString( int val )
+static std::string castIntToString( int val )
 {
 	std::stringstream ss;
 	ss << val;
@@ -19,7 +19,7 @@ std::string castIntToString( int val )
 }
 
 // Takes a string and attempts to convert it to an int. On failure, returns 0
-int castStringToInt( std::string val )
+static int castStringToInt( std::string val )
 {
 	std::stringstream ss(val);
 	int num;
@@ -62,7 +62,11 @@ bool ParseLang::isOperator( std::string op )
 	{
 		return true;
 	}
-	else if ( op.compare( "!" ) == 0 )
+	else if ( op.compare( "!" ) == 0 || op.compare( "^" ) == 0 )
+	{
+		return true;
+	}
+	else if ( op.compare( ":" ) == 0 )
 	{
 		return true;
 	}
@@ -150,8 +154,9 @@ void ParseLang::ensureMeaningfulTokens()
 		for ( int j = 0; j < (int) rule.size(); j++ )
 		{
 			if ( !isKeyword( rule.at(j) ) && !isOperator( rule.at(j) )
-				&& !isStringLiteral( rule.at(j) ) && !isRuleName( rule.at(j) )
-				&& castStringToInt( rule.at(j) ) == 0 )
+				&& !isPermissiveStringLiteral( rule.at(j) ) &&
+				!isRuleName( rule.at(j) ) && !isMsgName( rule.at(j) ) &&
+				castStringToInt( rule.at(j) ) == 0 )
 			{
 				std::string error = "  Error in definition of ";
 				error += statements.at(i).getName();
@@ -201,7 +206,21 @@ bool ParseLang::isRuleName( std::string token )
 {
 	for ( int i = 0; i < (int) statements.size(); i++ )
 	{
-		if ( statements.at(i).getName().compare( token ) == 0 )
+		if ( statements.at(i).getName().compare( token ) == 0 &&
+			!statements.at(i).isErrorMsg() && !statements.at(i).isNoteMsg() )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool ParseLang::isMsgName( std::string token )
+{
+	for ( int i = 0; i < (int) statements.size(); i++ )
+	{
+		if ( statements.at(i).getName().compare( token ) == 0 &&
+			( statements.at(i).isErrorMsg() || statements.at(i).isNoteMsg() ) )
 		{
 			return true;
 		}
@@ -532,7 +551,66 @@ void ParseLang::ensureOperatorUsage()
 					error += "\"|\" operator misused at token ";
 					error += castIntToString(j);
 					error += ", \"|\" must be between symbols\n\t";
-					error += "or parentheses [)|(]. Found attached to: \"";
+					error += "or parentheses [)|(].";
+					error += "\n\tFound as: [";
+					error += rule.at( j - 1 );
+					error += " ";
+					error += rule.at( j );
+					error += " ";
+					error += rule.at( j + 1 );
+					error += "].";
+					throw error;
+				}
+			}
+			else if ( rule.at(j).compare( "^" ) == 0 )
+			{
+				/*
+				std::cout << rule.at( j - 1 ) << " " << rule.at( j ) <<
+					" " << rule.at( j + 1 ) << std::endl;
+				*/
+				if ( j - 1 < 0 || !isMsgName( rule.at( j + 1) ) ||
+					( rule.at( j - 1 ).compare( ")" ) != 0 &&
+					!isStringLiteral( rule.at( j - 1 ) ) &&
+					!isRuleName( rule.at( j - 1 ) ) ) &&
+					( !isKeyword( rule.at( j - 1 ) ) ||
+					rule.at(j - 1).compare( "arbsym" ) == 0 ||
+					rule.at(j - 1).compare( "NULL" ) == 0 ) )
+				{
+					std::string error = "  Error in definition of ";
+					error += statements.at(i).getName();
+					error += ":\n\t";
+					error += "\"^\" operator misused at token ";
+					error += castIntToString(j);
+					error += ", \"^\" must be before a message rule\n\t";
+					error += "and after \"symbol\", end-paren, string ";
+					error += "literal, or rulename.";
+					error += "\n\tFound as: [";
+					error += rule.at( j - 1 );
+					error += " ";
+					error += rule.at( j );
+					error += " ";
+					error += rule.at( j + 1 );
+					error += "].";
+					throw error;
+				}
+			}
+			else if ( rule.at(j).compare( ":" ) == 0 )
+			{
+				/*
+				std::cout << rule.at( j - 1 ) << " " << rule.at( j ) <<
+					" " << rule.at( j + 1 ) << std::endl;
+				*/
+				if ( j - 1 < 0 || ( rule.at( j - 1).compare( "symbol" ) != 0 &&
+					rule.at( j - 1).compare( "newsym" ) != 0 ) ||
+					!isStringLiteral( rule.at(j+1) ) )
+				{
+					std::string error = "  Error in definition of ";
+					error += statements.at(i).getName();
+					error += ":\n\t";
+					error += "\":\" operator misused at token ";
+					error += castIntToString(j);
+					error += ", \":\" must be before a symbol table name\n\t";
+					error += "and after \"symbol\", or \"newsym\".";
 					error += "\n\tFound as: [";
 					error += rule.at( j - 1 );
 					error += " ";
@@ -760,7 +838,9 @@ void ParseLang::ensureValidStart()
 		*/
 		if ( statements.at(i).getRule().at(0).compare( ">" ) == 0 ||
 			statements.at(i).getRule().at(0).compare( "|" ) == 0 ||
-			statements.at(i).getRule().at(0).compare( "@" ) == 0 )
+			statements.at(i).getRule().at(0).compare( "@" ) == 0 ||
+			statements.at(i).getRule().at(0).compare( ":" ) == 0 ||
+			statements.at(i).getRule().at(0).compare( "^" ) == 0 )
 		{
 			std::string error = "  Error in definition of ";
 			error += statements.at(i).getName();
@@ -797,8 +877,67 @@ void ParseLang::parseDescription( std::string parseFile )
 		while ( tokens.at(i) == "@" )
 		{
 			i++;
-			if ( tokens.at(i).compare( "new" ) == 0 )
+			if ( tokens.at(i).compare( "error" ) == 0 )
 			{
+				if ( statement.isNoteMsg() )
+				{
+					std::string error = "  Error in definition of ";
+					error += statement.getName();
+					error += ":\n\t";
+					error += "@error cannot be applied when the rule is ";
+					error += "a notification.";
+					throw error;
+				}
+				else if ( statement.isNew() || statement.isPermeate() ||
+					statement.isCenter() )
+				{
+					std::string error = "  Error in definition of ";
+					error += statement.getName();
+					error += ":\n\t";
+					error += "@error cannot be applied when the rule declares ";
+					error += "use of symbol tables\n\t(rule is a true grammar ";
+					error += "rule).";
+					throw error;
+				}
+				statement.setIsErrorMsg();
+				i++;
+			}
+			else if ( tokens.at(i).compare( "note" ) == 0 )
+			{
+				if ( statement.isErrorMsg() )
+				{
+					std::string error = "  Error in definition of ";
+					error += statement.getName();
+					error += ":\n\t";
+					error += "@note cannot be applied when the rule is ";
+					error += "an error message.";
+					throw error;
+				}
+				else if ( statement.isNew() || statement.isPermeate() ||
+					statement.isCenter() )
+				{
+					std::string error = "  Error in definition of ";
+					error += statement.getName();
+					error += ":\n\t";
+					error += "@note cannot be applied when the rule declares ";
+					error += "use of symbol tables\n\t(rule is a true grammar ";
+					error += "rule).";
+					throw error;
+				}
+				statement.setIsNoteMsg();
+				i++;
+			}
+			else if ( tokens.at(i).compare( "new" ) == 0 )
+			{
+				if ( statement.isErrorMsg() || statement.isNoteMsg() )
+				{
+					std::string error = "  Error in definition of ";
+					error += statement.getName();
+					error += ":\n\t";
+					error += "@new cannot be applied when the rule is a ";
+					error += "notification.";
+					throw error;
+				}
 				i++;
 				if ( tokens.at(i).compare( ":" ) == 0 )
 				{
@@ -834,6 +973,15 @@ void ParseLang::parseDescription( std::string parseFile )
 			}
 			else if ( tokens.at(i).compare( "permeate" ) == 0 )
 			{
+				if ( statement.isErrorMsg() || statement.isNoteMsg() )
+				{
+					std::string error = "  Error in definition of ";
+					error += statement.getName();
+					error += ":\n\t";
+					error += "@permeate cannot be applied when the rule is a ";
+					error += "notification.";
+					throw error;
+				}
 				i++;
 				if ( tokens.at(i).compare( ":" ) == 0 )
 				{
@@ -869,6 +1017,15 @@ void ParseLang::parseDescription( std::string parseFile )
 			}
 			else if ( tokens.at(i).compare( "center" ) == 0 )
 			{
+				if ( statement.isErrorMsg() || statement.isNoteMsg() )
+				{
+					std::string error = "  Error in definition of ";
+					error += statement.getName();
+					error += ":\n\t";
+					error += "@center cannot be applied when the rule is a ";
+					error += "notification.";
+					throw error;
+				}
 				i++;
 				if ( tokens.at(i).compare( ":" ) == 0 )
 				{
@@ -910,7 +1067,8 @@ void ParseLang::parseDescription( std::string parseFile )
 				error += ":\n\t";
 				error += "Found @, got \"";
 				error += tokens.at(i);
-				error += "\", expected: \"new\" or \"permeate\".";
+				error += "\", expected: \"new\", \"permeate\", \"center\", ";
+				error += "\"error\" or \"note\".";
 				throw error;
 			}
 		}
@@ -926,6 +1084,39 @@ void ParseLang::parseDescription( std::string parseFile )
 				throw error;
 		}
 		i++;
+		if ( statement.isErrorMsg() || statement.isNoteMsg() )
+		{
+			if ( !isPermissiveStringLiteral( tokens.at(i) ) ||
+				i + 1 == tokens.size() || tokens.at(i+1).compare( ";" ) != 0 )
+			{
+				std::string error = "  Error in definition of ";
+				error += statement.getName();
+				error += ":\n\t";
+				error += "Message rules must consist of exactly one string ";
+				error += "literal token and a\n\tterminating semicolon. First ";
+				error += "and second tokens:\n\t[";
+				error += tokens.at(i);
+				error += "] [";
+				if ( i + 1 == tokens.size() )
+				{
+					error += "END OF TOKEN STREAM";
+				}
+				else if ( tokens.at(i).compare(";") == 0 )
+				{
+					error += "PREVIOUS TOKEN IS TERMINATING SEMICOLON";
+				}
+				else
+				{
+					error += tokens.at(i+1);
+				}
+				error += "].";
+				throw error;
+			}
+			std::cout << "\nBegin after newline:\n" << tokens.at(i) <<
+				std::endl;
+			statement.addTokenToRule( tokens.at(i) );
+			i++;
+		}
 		// The following is an algorithm to ensure that quotes only enclose
 		// exactly one token
 		while ( tokens.at(i).compare(";") != 0 )
@@ -959,6 +1150,15 @@ void ParseLang::parseDescription( std::string parseFile )
 			i++;
 		}
 		statement.addTokenToRule( ";" );
+		if ( statement.getRule().size() == 1 )
+		{
+			std::string error = "  Error in definition of ";
+			error += statement.getName();
+			error += ":\n\t";
+			error += "Rule must contain content other than the terminating ";
+			error += "semicolon.";
+			throw error;
+		}
 		i++;
 		statements.push_back( statement );
 	}
@@ -1080,6 +1280,11 @@ bool ParseLang::matchRegex( std::string regexString , std::string tokenString )
 bool ParseLang::isStringLiteral( std::string token )
 {
 	return matchRegex( "^\"[^ \t\n]+\"$" , token );
+}
+
+bool ParseLang::isPermissiveStringLiteral( std::string token )
+{
+	return matchRegex( "^\".*\"$" , token );
 }
 
 std::vector<std::string> ParseLang::getSimilarTokens(
