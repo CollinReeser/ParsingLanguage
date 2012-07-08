@@ -1,4 +1,6 @@
 
+#include <vector>
+#include <string>
 
 class NamedVector
 {
@@ -20,12 +22,22 @@ private:
 
 class SymbolTable
 {
+	SymbolTable();
 	// Creates a new hierarchial layer below the current lowest one, with 
 	// some number of tables at the new layer
 	void newLayer( int tablesInLayer = 1 );
 	// Destroys the lowest layer
 	void destroyLowestLayer();
+	// Attempts to add a new entry into the table specified at the hierarchial
+	// layer specified. If the entry is already present, return false.
+	// Otherwise, return true for success in adding the entry
+	bool addEntryToLayer( std::string entry , int layer , int table );
+	// Attempts to find an entry in the table specified at the hierarchial
+	// layer specified. If the entry is present, return true. Otherwise, return
+	// false for failure in adding the entry
+	bool isEntryInLayer( std::string entry , int layer , int table );
 private:
 	std::vector<std::vector<std::vector<std::string> > > hierarchialTables;
 	std::vector<NamedVector> namedTables;
+	int layers;
 };
