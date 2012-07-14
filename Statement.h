@@ -33,14 +33,18 @@ public:
 	bool isCenter();
 	bool isErrorMsg();
 	bool isNoteMsg();
-	static std::vector<std::string> getListRuleNames(
-		const std::vector<Statement> statements );
 	unsigned long long int getFlags();
 	//Operator overloading. We need copying
 	Statement& operator=( const Statement &other );
+	// Performs a transform on the rule to produce ruleTransOne that carries the
+	// same meaning as rule while in a friendlier-to-interpret syntax
+	void syntaxTransformOne();
+	static std::vector<std::string> getListRuleNames(
+		const std::vector<Statement> statements );
 private:
 	std::string name;
 	std::vector<std::string> rule;
+	std::vector<std::string> ruleTransOne;
 	int anchor;
 	unsigned long long int flags;
 };

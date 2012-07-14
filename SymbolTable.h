@@ -1,4 +1,7 @@
 
+#ifndef SYMBOL_TABLE_H
+#define SYMBOL_TABLE_H
+
 #include <vector>
 #include <string>
 
@@ -41,3 +44,5 @@ private:
 	std::vector<NamedVector> namedTables;
 	int layers;
 };
+
+#endif
