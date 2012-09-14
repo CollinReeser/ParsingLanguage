@@ -21,3 +21,7 @@ StripComments.o:	StripComments.cpp SimpleTextUtil.h
 	
 ShuntingYard.o:	ShuntingYard.cpp SimpleTextUtil.h
 	g++ -c ShuntingYard.cpp
+
+clean:
+	rm lexerTest lexigraph.o lexer.o SourceRead.o MiscTextUtil.o\
+		StripComments.o ShuntingYard.o

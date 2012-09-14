@@ -2,6 +2,7 @@
 #include <stack>
 #include <vector>
 #include <string>
+#include <sstream>
 #include "Statement.h"
 
 // Takes an int and returns a string representation
