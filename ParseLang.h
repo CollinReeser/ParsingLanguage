@@ -30,6 +30,9 @@ public:
 	ParseLang( std::string parseFile );
 	ParseLang();
 	void printPassOne();
+	// Checks if the string is the name of an established rule in the list of
+	// statements
+	bool isRuleName( std::string token ) const;
 	// This is a very poor implementation of some terribly designed algorithm
 	// that is supposed to take a list of strings and a token, and return a
 	// list of strings as a subset of the passed list of strings that is similar
@@ -77,9 +80,6 @@ private:
 	// This returns true if the string passed in is considered a string literal
 	// containing anything
 	bool isPermissiveStringLiteral( std::string token );
-	// Checks if the string is the name of an established rule in the list of
-	// statements
-	bool isRuleName( std::string token );
 	// Checks if the string is the name of an established msg rule in the list
 	// of statements
 	bool isMsgName( std::string token );

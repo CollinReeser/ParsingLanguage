@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iostream>
+#include "ParseLang.h"
 #include "Statement.h"
 
 // Takes an int and returns a string representation
@@ -24,15 +26,15 @@ std::vector<std::string> Statement::getListRuleNames(
 	return names;
 }
 
-void Statement::syntaxTransformOne()
+void Statement::syntaxTransformOne( const ParseLang& parse )
 {
 	// Note that anywhere a "_" appears is indicative of the semi-arbitrary
 	// decision to use underscore as an indicator token in the stack for use
-	// with segemnting the tokens on the stack
+	// with segmenting the tokens on the stack
 	std::vector<std::string> newSyntaxRule;
 	std::stack<std::string,std::vector<std::string> > opStack;
 	int i = 0;
-	while ( rule.at(i).compare(";") != 0 )
+	while ( i < rule.size() && rule.at(i).compare(";") != 0 )
 	{
 		if ( rule.at(i).compare( "symbol" ) == 0 || 
 			rule.at(i).compare( "newsym" ) == 0 || 
@@ -41,7 +43,8 @@ void Statement::syntaxTransformOne()
 			rule.at(i).compare( ":" ) == 0 ||
 			rule.at(i).compare( "@" ) == 0 ||
 			rule.at(i).compare( "^" ) == 0 ||
-			rule.at(i).at(0) == '\"' )
+			rule.at(i).at(0) == '\"' ||
+			parse.isRuleName( rule.at(i) ) )
 		{
 			newSyntaxRule.push_back( rule.at(i) );
 			i++;
@@ -93,14 +96,6 @@ void Statement::syntaxTransformOne()
 				i++;
 			}
 		}
-		// HERE, WE NEED TO CHECK FOR INTEGER VALUES SUCH AS SYMBOL TABLE
-		// SELECTION
-		/*
-		else if ()
-		{
-
-		}
-		*/
 		// Here, we shouldn't ever enter because it means we have met with
 		// unexpected input, which the parser should have notified us of ahead
 		// of time, but nonetheless
@@ -142,30 +137,14 @@ std::vector<std::string> Statement::getRule() const
 	return rule;
 }
 
+std::vector<std::string> Statement::getRuleTransOne() const
+{
+	return ruleTransOne;
+}
+
 void Statement::addTokenToRule( std::string token )
 {
 	rule.push_back( token );
-	return;
-}
-
-void Statement::setSymbolTableNum( int num )
-{
-	flags |= NEW_TABLE;
-	flags |= num << 8;
-	return;
-}
-
-void Statement::setPermeateNum( int num )
-{
-	flags |= PERMEATE;
-	flags |= num;
-	return;
-}
-
-void Statement::setCenterLocation( int num )
-{
-	flags |= CENTER;
-	flags |= num << 16;
 	return;
 }
 
@@ -181,27 +160,12 @@ void Statement::setIsNoteMsg()
 	return;
 }
 
-bool Statement::isNew()
-{
-	return ( flags >> 63 ) & 0b1;
-}
-
-bool Statement::isPermeate()
-{
-	return ( flags >> 62 ) & 0b1;
-}
-
-bool Statement::isCenter()
-{
-	return ( flags >> 61 ) & 0b1;
-}
-
-bool Statement::isErrorMsg()
+bool Statement::isErrorMsg() const
 {
 	return ( flags >> 60 ) & 0b1;
 }
 
-bool Statement::isNoteMsg()
+bool Statement::isNoteMsg() const
 {
 	return ( flags >> 59 ) & 0b1;
 }

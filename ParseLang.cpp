@@ -107,9 +107,9 @@ void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
 		ensureNoRuleDuplicates();
 		ensureParentheses();
 		ensureValidStart();
+		ensureMeaningfulTokens();
 		ensureOperatorUsage();
 		ensureSymbolsOperatorSeparated();
-		ensureMeaningfulTokens();
 		return;
 	}
 	try
@@ -154,6 +154,29 @@ void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
 		}
 	}
 	*/
+	for ( int i = 0; i < statements.size(); i++ )
+	{
+		std::cout << "Rule: " << statements.at(i).getName() << "\n\t";
+		for ( int m = 0; m < statements.at(i).getRule().size(); m++ )
+		{
+			std::cout << statements.at(i).getRule().at(m) << " ";
+		}
+		std::cout << std::endl;
+		try
+		{
+			statements.at(i).syntaxTransformOne( *this );
+		}
+		catch ( std::string msg )
+		{
+			std::cout << msg << std::endl;
+		}
+		std::cout << "Rule: " << statements.at(i).getName() << "\n\t";
+		for ( int m = 0; m < statements.at(i).getRuleTransOne().size(); m++ )
+		{
+			std::cout << statements.at(i).getRuleTransOne().at(m) << " ";
+		}
+		std::cout << std::endl;
+	}
 	return;
 }
 
@@ -230,7 +253,7 @@ void ParseLang::ensureMeaningfulTokens()
 	}
 }
 
-bool ParseLang::isRuleName( std::string token )
+bool ParseLang::isRuleName( std::string token ) const
 {
 	for ( int i = 0; i < (int) statements.size(); i++ )
 	{
@@ -363,12 +386,6 @@ void ParseLang::pullRuleSets( bool nested )
 			std::cout << "Left out.";
 		}
 		return;
-	}
-	// Otherwise, perform include
-	if ( !nested && statement.isNew() || statement.isPermeate() )
-	{
-		std::cout << "\tWarning: \"include_rules\" properties are meaningless."
-			<< std::endl;
 	}
 	std::vector<std::string> rule = statement.getRule();
 	for ( int i = 0; i < (int) rule.size() - 1; i++ )
@@ -1000,17 +1017,6 @@ void ParseLang::parseDescription( std::string parseFile )
 					error += "a notification.";
 					throw error;
 				}
-				else if ( statement.isNew() || statement.isPermeate() ||
-					statement.isCenter() )
-				{
-					std::string error = "  Error in definition of ";
-					error += statement.getName();
-					error += ":\n\t";
-					error += "@error cannot be applied when the rule declares ";
-					error += "use of symbol tables\n\t(rule is a true grammar ";
-					error += "rule).";
-					throw error;
-				}
 				statement.setIsErrorMsg();
 				i++;
 			}
@@ -1023,17 +1029,6 @@ void ParseLang::parseDescription( std::string parseFile )
 					error += ":\n\t";
 					error += "@note cannot be applied when the rule is ";
 					error += "an error message.";
-					throw error;
-				}
-				else if ( statement.isNew() || statement.isPermeate() ||
-					statement.isCenter() )
-				{
-					std::string error = "  Error in definition of ";
-					error += statement.getName();
-					error += ":\n\t";
-					error += "@note cannot be applied when the rule declares ";
-					error += "use of symbol tables\n\t(rule is a true grammar ";
-					error += "rule).";
 					throw error;
 				}
 				statement.setIsNoteMsg();
@@ -1157,17 +1152,7 @@ void ParseLang::printPassOne()
 		{
 			std::cout << rule.at(j) << " ";
 		}
-		std::cout << "\n  Flags: " <<
-			"New sym table? " << ( ( statements.at(i).isNew() ) ?
-			"Yes; ":"No; " ) <<
-			"Permeates? " << ( ( statements.at(i).isPermeate() ) ?
-			"Yes; " : "No; " ) <<
-			"Centered? " << ( ( statements.at(i).isCenter() ) ?
-			"Yes; " : "No; " ) <<
-			"ST: " << (int)( SYMBOL_DEPTH( statements.at(i).getFlags() ) ) <<
-			" P: " << (int)( PERMEATE_DEPTH( statements.at(i).getFlags() ) ) <<
-			" C: " << (int)( CENTERING_SPOT( statements.at(i).getFlags() ) ) <<
-			"\n\n";
+		std::cout << std::endl;
 	}
 	return;
 }
