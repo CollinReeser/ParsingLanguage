@@ -1,0 +1,35 @@
+The intent is to transition from the current state of things, which is frankly
+much too complicated, to a simple scope creation and deletion system, with the
+ability to build keyword lists on the fly. This requires somewhat of a
+substantial change in syntax, including:
+	Getting rid of the following entirely:
+		- @new 		(To be replaced with :newscope, in spirit but not as a
+			property)
+		- @permeate	(To be removed completely)
+		- @center	(To be removed completely)
+		- @ operator	(Outside of property designations, which may be removed
+			entirely)
+
+
+
+
+New constructs:
+	- :newscope : Right-affixed to pretty much anything, and denotes that a
+		new, deeper scope will be generated, such that new symbols are added
+		to this list, and symbols are backchecked starting at this scope and
+		above. Think how variables are in C++.
+	- :delscope : Right-affixed to pretty much anything, and denoted that the
+		current lowest level scope is to be deleted, removing the list of
+		variables it referred to as though it never existed.
+	- create_list : Rulename that earns special syntax like include_rules, and
+		denotes the creation of a named list that can be added to and checked
+		against.
+		Syntax: create_list myList = "int" "short" "long";
+	- :addToList:[list name] : Where the bracketed portion is to be replaced
+	 	with the name of a declared list, as in @addToList:myList , and where
+	 	this construct is right-affixed to some singular string term, in
+	 	whatever form, so that it is added to the named list so it can be
+	 	checked against.
+	- :[myList] : Right-affixed to some thing that evaluates to a string, as in
+		@addToList , such that it can be checked against the named list for
+		existence.

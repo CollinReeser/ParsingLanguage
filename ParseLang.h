@@ -65,6 +65,8 @@ private:
 	// other sanity checks. If the parameter is true, print statements are
 	// suppressed
 	void pullRuleSets( bool nested );
+	// This finds create_list statements and creates those lists
+	void createLists();
 	// This adds the statements from tempParse to this, ensuring no duplicates
 	void mergeStatementList( std::string filename );
 	bool isOperator( std::string op );
@@ -91,6 +93,7 @@ private:
 	// list matching request, and then evaluates whichever was requested
 	bool matchOctothorpeString( std::string octostring , std::string token );
 	std::vector<Statement> statements;
+	std::vector<std::vector<std::string> > lists; 
 	Scope topScope;
 	std::string parseFile;
 };

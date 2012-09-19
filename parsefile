@@ -5,43 +5,47 @@
 
 TOPLEVEL = *import > ( *class | *function | *variableDec );
 
-import = "import" > string > end | access | ( "," > import );
+// Was used for testing purposes
+include_rules = testInclude;
 
-access = "." > string > end | access;
+create_list = myList "int" "short" "long";
+
+create_list = myList2 "bool";
+
+import = "import" > "string" > end | access | ( "," > import );
+
+access = "." > "string" > end | access;
 
 end = ";";
 
-class @new:3 = "class" > newsym > "{" > ( *variableDec | *function ) > "}";
+class = "class" > newsym > "{" > ( *variableDec | *function ) > "}";
 
 variableDec = intdec | booldec;
 
-intdec = inttype > newsym@1 > end | ( "=" > lit_int > end );
+intdec = inttype > newsym > end | ( "=" > #"0123456789" > end );
 
-booldec = "bool" > newsym@2 > end | ( "=" > boolean > end );
+booldec = "bool" > newsym > end | ( "=" > boolean > end );
 
 inttype = "int" | "long" | "short" | "byte";
 
 boolean = "true" | "false";
 
-function @new:3 @permeate:1 = ( symbol@1 | symbol@2 ) > newsym@3 > "(" paramList
+function = ( symbol | symbol ) > newsym > "(" > paramList
 	> ")" > "{" > *statements > "}";
 	
 paramList = variableDec > NULL | ( "," > paramList );
 
 statements = variableDec | assignment;
 
-assignment = ( symbol@1 > "=" > arithmetic2 ) | ( symbol@2 > "=" > boolAssign );
+assignment = ( symbol > "=" > arithmetic2 ) | ( symbol > "=" > boolean );
 
-arithmetic = ( lit_int | symbol ) > operator > ( lit_int | symbol ) > arith_part
-	| end;
+arithmetic = ( #"0123456789" | symbol ) > "+" > ( #"0123456789" | symbol ) > 
+	arith_part | end;
 	
-arith_part = operator > parenArith | ( lit_int | symbol ) > end | 
+arith_part = "+" > parenArith | ( #"0123456789" | symbol ) > end | 
 	arith_part;
 
 arithmetic2 = parenArith | arithmetic;
 
 parenArith = "(" > arithmetic2 | arithmetic > ")";
-
-// Was used for testing purposes
-//include_rules = testInclude;
 

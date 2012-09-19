@@ -1,0 +1,40 @@
+TOPLEVEL = simple;
+
+// Create a list of types
+create_list = types "int" "short" "long";
+
+simple = symbol > symbol > symbol > symbol;
+
+ternsym = ( symbol | newsym ); // Note that order doesn't matter here with "|"
+
+// This should match against an arbitrarily complex well-formed string token
+lit_string = #"r^\".*\"$";
+
+example = *(symbol | "apple" | "banana") > ( "pear" | "peach" );
+
+// This creates a new scope after "{" and deletes the scope after "}"
+newScopeEx = "{":newscope > simple > "}":delscope;
+
+intLit = "the" > "dragon" > #"1234567890";
+
+force_one = newsym > *newsym > "apple";
+
+force_four = symbol > !*!(#"123") | NULL;
+
+class_def = newsym:addToList:types;
+
+force_whatever = #"1234567890" > newsym!#"1234567890" > !(force_four);
+
+force_double = arbsym#"123";
+
+force_skdjfh = symbol;
+
+error_log @error = "ERROR \
+					WOO.";
+
+force_eleventy = symbol:types ^ error_log;
+
+
+
+
+

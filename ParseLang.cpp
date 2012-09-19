@@ -50,7 +50,7 @@ bool ParseLang::isOperator( std::string op )
 	{
 		return true;
 	}
-	else if ( op.compare( ">" ) == 0 || op.compare( "@" ) == 0 )
+	else if ( op.compare( ">" ) == 0 )
 	{
 		return true;
 	}
@@ -85,6 +85,15 @@ bool ParseLang::isKeyword( std::string keyword )
 	{
 		return true;
 	}
+	else if ( keyword.compare( "newscope" ) == 0 ||
+			keyword.compare( "delscope" ) == 0 )
+	{
+		return true;
+	}
+	else if ( keyword.compare( "addToList" ) == 0 )
+	{
+		return true;
+	}
 	return false;
 }
 
@@ -94,6 +103,7 @@ void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
 	{
 		parseDescription( parseFile );
 		pullRuleSets( true );
+		createLists();
 		ensureNoRuleDuplicates();
 		ensureParentheses();
 		ensureValidStart();
@@ -109,8 +119,10 @@ void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
 		std::cout << "Absorbed.\nAbsorbing requested external rulesets... " <<
 			"\t\t\t";
 		pullRuleSets( false );
-		std::cout << "\nEnsuring no statements share a common " <<
-			"identifier... \t\t";
+		std::cout << "\nCreating requested lists... \t\t";
+		createLists();
+		std::cout << "\nCompleted. Ensuring no statements share a common " <<
+			"identifier... \t";
 		ensureNoRuleDuplicates();
 		std::cout << "Verified.\nEnsuring no statements contain parentheses " <<
 			"problems... \t\t";
@@ -158,6 +170,22 @@ void ParseLang::ensureMeaningfulTokens()
 				!isRuleName( rule.at(j) ) && !isMsgName( rule.at(j) ) &&
 				castStringToInt( rule.at(j) ) == 0 )
 			{
+				// Up until the continue, this just acts as another check. If
+				// the token is the name of a list, it is meaningful and should
+				// not raise an error
+				bool isListName = false;
+				for ( int k = 0; k < lists.size(); k++ )
+				{
+					if ( lists.at(k).at(0).compare( rule.at(j) ) == 0 )
+					{
+						isListName = true;
+						break;
+					}
+				}
+				if ( isListName )
+				{
+					continue;
+				}
 				std::string error = "  Error in definition of ";
 				error += statements.at(i).getName();
 				error += ":\n\t";
@@ -238,6 +266,79 @@ void parseSourceFile( std::string sourcefile ,
 	// Here, do the algorithm for parsing the source file
 	
 
+	return;
+}
+
+void ParseLang::createLists()
+{
+	Statement statement;
+	for ( int i = 0; i < (int) statements.size(); i++ )
+	{
+		if ( statements.at(i).getName().compare( "create_list" ) == 0 )
+		{
+			statement = statements.at(i);
+			// Remove this create_list line from list of statements
+			statements.erase( statements.begin() + i );
+			i--;
+			std::vector<std::string> rule = statement.getRule();
+			// First argument must not be a string literal
+			if ( isStringLiteral( rule.at( 0 ) ) )
+			{
+				std::string error = "  Error in create_list directive:\n\t"
+					"List name argument was a string literal.\n\tFound as: [";
+				error += rule.at( 0 );
+				error += "].";
+				throw error;
+			}
+			std::vector<std::string> newList;
+			// Check to ensure the list name is not already taken
+			for ( int i = 0; i < lists.size(); i++ )
+			{
+				if ( rule.at(0).compare( lists.at(i).at(0) ) == 0 )
+				{
+					std::string error = "  Error in create_list directive:\n\t"
+						"List name argument already in use.\n\tFound as: [";
+					error += rule.at( 0 );
+					error += "].";
+					throw error;
+				}
+			}
+			// The first entry in the list vector is the name of the list.
+			// Every entry after that will be an entry to the list
+			newList.push_back( rule.at( 0 ) );
+			lists.push_back( newList );
+			// Everything after must be a string literal, and will be added to
+			// the specified list
+			for ( int i = 1; i < rule.size() - 1; i++ )
+			{
+				if ( !isStringLiteral( rule.at( i ) ) )
+				{
+					std::string error = "  Error in create_list directive:\n\t"
+						"List entries must be string literals.\n\tFound as:"
+						" [";
+					error += rule.at( 0 );
+					error += "].";
+					throw error;
+				}
+				else
+				{
+					lists.at( lists.size() - 1 ).push_back( rule.at( i ) );
+				}
+			}
+		}
+	}
+	for ( int i = 0; i < lists.size(); i++ )
+	{
+		std::cout << "\n  List name: " << lists.at(i).at(0) << std::endl;
+		for ( int j = 1; j < lists.at(i).size(); j++ )
+		{
+			std::cout << "\t\t" << lists.at(i).at(j);
+			if ( j < lists.at(i).size() - 1 )
+			{
+				std::cout << std::endl;
+			}
+		}
+	}
 	return;
 }
 
@@ -576,6 +677,22 @@ void ParseLang::ensureOperatorUsage()
 					rule.at(j - 1).compare( "arbsym" ) == 0 ||
 					rule.at(j - 1).compare( "NULL" ) == 0 ) )
 				{
+					// Up until the continue, this just acts as another check. 
+					// If the token is the name of a list, it is meaningful and
+					// should not raise an error
+					bool isListName = false;
+					for ( int k = 0; k < lists.size(); k++ )
+					{
+						if ( lists.at(k).at(0).compare( rule.at(j-1) ) == 0 )
+						{
+							isListName = true;
+							break;
+						}
+					}
+					if ( isListName )
+					{
+						continue;
+					}
 					std::string error = "  Error in definition of ";
 					error += statements.at(i).getName();
 					error += ":\n\t";
@@ -583,7 +700,7 @@ void ParseLang::ensureOperatorUsage()
 					error += castIntToString(j);
 					error += ", \"^\" must be before a message rule\n\t";
 					error += "and after \"symbol\", end-paren, string ";
-					error += "literal, or rulename.";
+					error += "literal, list name, or rulename.";
 					error += "\n\tFound as: [";
 					error += rule.at( j - 1 );
 					error += " ";
@@ -600,17 +717,38 @@ void ParseLang::ensureOperatorUsage()
 				std::cout << rule.at( j - 1 ) << " " << rule.at( j ) <<
 					" " << rule.at( j + 1 ) << std::endl;
 				*/
-				if ( j - 1 < 0 || ( rule.at( j - 1).compare( "symbol" ) != 0 &&
-					rule.at( j - 1).compare( "newsym" ) != 0 ) ||
-					!isStringLiteral( rule.at(j+1) ) )
+				if ( j - 1 < 0 || ( rule.at(j - 1).compare( "symbol" ) != 0 &&
+					rule.at(j - 1).compare( "newsym" ) != 0 &&
+					rule.at(j - 1).compare( "addToList" ) != 0 &&
+					rule.at(j + 1).compare( "newscope" ) != 0 &&
+					rule.at(j + 1).compare( "delscope" ) != 0 &&
+					!isStringLiteral( rule.at(j+1) ) ) )
 				{
+					/*
+					// Up until the continue, this just acts as another check. 
+					// If the token is the name of a list, it is meaningful and
+					// should not raise an error
+					bool isListName = false;
+					for ( int k = 0; k < lists.size(); k++ )
+					{
+						if ( lists.at(k).at(0).compare( rule.at(j+1) ) == 0 )
+						{
+							isListName = true;
+							break;
+						}
+					}
+					if ( isListName )
+					{
+						continue;
+					}
+					*/
 					std::string error = "  Error in definition of ";
 					error += statements.at(i).getName();
 					error += ":\n\t";
 					error += "\":\" operator misused at token ";
 					error += castIntToString(j);
-					error += ", \":\" must be before a symbol table name\n\t";
-					error += "and after \"symbol\", or \"newsym\".";
+					error += ", \":\" must be before newscope/delscope\n\t";
+					error += "and/or after \"symbol\", or \"newsym\".";
 					error += "\n\tFound as: [";
 					error += rule.at( j - 1 );
 					error += " ";
@@ -647,32 +785,6 @@ void ParseLang::ensureOperatorUsage()
 					error += castIntToString(j);
 					error += ", \">\" must be between symbols\n\t";
 					error += "or parentheses [)>(].";
-					error += "\n\tFound as: [";
-					error += rule.at( j - 1 );
-					error += " ";
-					error += rule.at( j );
-					error += " ";
-					error += rule.at( j + 1 );
-					error += "].";
-					throw error;
-				}
-			}
-			else if ( rule.at(j).compare( "@" ) == 0 )
-			{
-				// If "*" is attached to something other than a symbol or an
-				// open-paren, fail
-				if ( j - 1 < 0 || ( rule.at(j-1).compare("symbol") != 0 &&
-					rule.at(j-1).compare("newsym") != 0 ) ||
-					castStringToInt( rule.at(j+1) ) <= 0 ||
-					castStringToInt( rule.at(j+1) ) > 255 )
-				{
-					std::string error = "  Error in definition of ";
-					error += statements.at(i).getName();
-					error += ":\n\t";
-					error += "\"@\" operator misused at token ";
-					error += castIntToString(j);
-					error += ", \"@\" must follow \"symbol\" or \"newsym\"\n\t";
-					error += "and must precede an integer, 1-255.";
 					error += "\n\tFound as: [";
 					error += rule.at( j - 1 );
 					error += " ";
@@ -927,138 +1039,6 @@ void ParseLang::parseDescription( std::string parseFile )
 				statement.setIsNoteMsg();
 				i++;
 			}
-			else if ( tokens.at(i).compare( "new" ) == 0 )
-			{
-				if ( statement.isErrorMsg() || statement.isNoteMsg() )
-				{
-					std::string error = "  Error in definition of ";
-					error += statement.getName();
-					error += ":\n\t";
-					error += "@new cannot be applied when the rule is a ";
-					error += "notification.";
-					throw error;
-				}
-				i++;
-				if ( tokens.at(i).compare( ":" ) == 0 )
-				{
-					i++;
-					int numSymbolTables = castStringToInt( tokens.at(i++) );
-					if ( numSymbolTables > 0 && numSymbolTables <= 255 )
-					{
-						statement.setSymbolTableNum( numSymbolTables );
-					}
-					else if ( numSymbolTables <= 0 )
-					{
-						std::string error = "  Error in definition of ";
-						error += statement.getName();
-						error += ":\n\t";
-						error += "@permeate cannot define less than 1 ";
-						error += "level of permeation.";
-						throw error;
-					}
-					else
-					{
-						std::string error = "  Error in definition of ";
-						error += statement.getName();
-						error += ":\n\t";
-						error += "@new cannot define greater than 255 ";
-						error += "symbol tables.";
-						throw error;
-					}
-				}
-				else
-				{
-					statement.setSymbolTableNum( 1 );
-				}
-			}
-			else if ( tokens.at(i).compare( "permeate" ) == 0 )
-			{
-				if ( statement.isErrorMsg() || statement.isNoteMsg() )
-				{
-					std::string error = "  Error in definition of ";
-					error += statement.getName();
-					error += ":\n\t";
-					error += "@permeate cannot be applied when the rule is a ";
-					error += "notification.";
-					throw error;
-				}
-				i++;
-				if ( tokens.at(i).compare( ":" ) == 0 )
-				{
-					i++;
-					int numPermeations = castStringToInt( tokens.at(i++) );
-					if ( numPermeations > 0 && numPermeations <= 255 )
-					{
-						statement.setPermeateNum( numPermeations );
-					}
-					else if ( numPermeations <= 0 )
-					{
-						std::string error = "  Error in definition of ";
-						error += statement.getName();
-						error += ":\n\t";
-						error += "@permeate cannot define less than 1 ";
-						error += "level of permeation.";
-						throw error;
-					}
-					else
-					{
-						std::string error = "  Error in definition of ";
-						error += statement.getName();
-						error += ":\n\t";
-						error += "@permeate cannot define greater than 255 ";
-						error += "levels of permeation.";
-						throw error;
-					}
-				}
-				else
-				{
-					statement.setPermeateNum( 0 );
-				}
-			}
-			else if ( tokens.at(i).compare( "center" ) == 0 )
-			{
-				if ( statement.isErrorMsg() || statement.isNoteMsg() )
-				{
-					std::string error = "  Error in definition of ";
-					error += statement.getName();
-					error += ":\n\t";
-					error += "@center cannot be applied when the rule is a ";
-					error += "notification.";
-					throw error;
-				}
-				i++;
-				if ( tokens.at(i).compare( ":" ) == 0 )
-				{
-					i++;
-					int centerLocation = castStringToInt( tokens.at(i++) );
-					if ( centerLocation > 0 && centerLocation <= 255 )
-					{
-						statement.setCenterLocation( centerLocation );
-					}
-					else if ( centerLocation <= 0 )
-					{
-						std::string error = "  Error in definition of ";
-						error += statement.getName();
-						error += ":\n\t";
-						error += "@center cannot focus on symbol tables ";
-						error += "less than 1.";
-						throw error;
-					}
-					else
-					{
-						std::string error = "  Error in definition of ";
-						error += statement.getName();
-						error += ":\n\t";
-						error += "@center cannot focus on symbol tables ";
-						error += "greater than 255.";
-						throw error;
-					}
-				}
-				else
-				{
-					statement.setCenterLocation( 1 );
-				}
-			}
 			// Error
 			else
 			{
@@ -1067,7 +1047,7 @@ void ParseLang::parseDescription( std::string parseFile )
 				error += ":\n\t";
 				error += "Found @, got \"";
 				error += tokens.at(i);
-				error += "\", expected: \"new\", \"permeate\", \"center\", ";
+				error += "\", expected: ";
 				error += "\"error\" or \"note\".";
 				throw error;
 			}
@@ -1112,7 +1092,7 @@ void ParseLang::parseDescription( std::string parseFile )
 				error += "].";
 				throw error;
 			}
-			std::cout << "\nBegin after newline:\n" << tokens.at(i) <<
+			std::cout << "\nBegin after newline:\n  " << tokens.at(i) <<
 				std::endl;
 			statement.addTokenToRule( tokens.at(i) );
 			i++;
