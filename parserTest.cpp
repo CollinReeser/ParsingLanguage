@@ -32,7 +32,8 @@ int main( int argc , char** argv )
 	}
 	if ( argc >= 3 )
 	{
-		ParseLang parse( argv[1] , argv[2] );
+		ParseLang parse( argv[1] );
+		parse.parseSourceFile( argv[2] );
 		//parse.printPassOne();
 	}
 	/*

@@ -21,7 +21,7 @@ force_one = newsym > *newsym > "apple";
 
 force_four = symbol > !*!(#"123") | NULL;
 
-class_def = newsym:addToList:types;
+class_def = newsym:addToList:types > symbol:types > ( symbol:types | "blue" );
 
 force_whatever = #"1234567890" > newsym!#"1234567890" > !(force_four);
 
@@ -29,8 +29,11 @@ force_double = arbsym#"123";
 
 force_skdjfh = symbol;
 
+innerTest = *( symbol > *( symbol > symbol ) > ( symbol ) ) > symbol;
+
 error_log @error = "ERROR \
-					WOO.";
+					WOO.\
+					";
 
 force_eleventy = symbol:types ^ error_log;
 

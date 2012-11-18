@@ -13,11 +13,18 @@ public:
 	// Attempts to add a string to the table, returns true if it is a new
 	// entry, and false if the entry already exists
 	bool addEntry( std::string entry );
+	// // Adds a list of strings to the table, ensuring there are no duplicates
+	// // but otherwise not caring whether there are already certain entries
+	// void addEntries( std::vector<std::string> entries );
 	// Returns true if the passed string is already an entry in the table
 	bool isEntry( std::string entry );
 	// Returns true if the table is the same name as the 
 	// name passed in, case sensitive
 	bool matchNamedTable( std::string posName );
+	// Returns the name of the table
+	std::string getName();
+	// Returns the list table
+	std::vector<std::string> getTable();
 private:
 	std::string name;
 	std::vector<std::string> table;

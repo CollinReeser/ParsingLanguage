@@ -5,15 +5,16 @@
 #include <string>
 #include <vector>
 #include "Statement.h"
+#include "SymbolTable.h"
 #include "lexer/lexer.h"
 
 
-class SymbolTable
-{
-private:
-	std::string name;
-	std::vector<std::string> symbols;
-};
+// class SymbolTable
+// {
+// private:
+// 	std::string name;
+// 	std::vector<std::string> symbols;
+// };
 
 class Scope
 {
@@ -26,24 +27,28 @@ private:
 class ParseLang
 {
 public:
-	ParseLang( std::string parseFile , std::string sourcefile );
 	ParseLang( std::string parseFile );
 	ParseLang();
 	void printPassOne();
 	// Checks if the string is the name of an established rule in the list of
 	// statements
 	bool isRuleName( std::string token ) const;
+	bool isKeyword( std::string keyword ) const;
 	// This is a very poor implementation of some terribly designed algorithm
 	// that is supposed to take a list of strings and a token, and return a
 	// list of strings as a subset of the passed list of strings that is similar
 	// to the passed token
 	static std::vector<std::string> getSimilarTokens(
 		std::vector<std::string> strings , std::string token );
-private:
-	void toplevelVerification( bool quiet , std::string parseFile );
 	void parseSourceFile( std::string sourcefile ,
 		std::vector<std::string> (*lexer_function)(std::string) =
 		tokenizeFile2 );
+private:
+	// An internal method used to recurse over the ruleset while parsing a
+	// sourcefile
+	unsigned int parseStatement( std::string statementName , 
+		std::vector<std::string> tokens , unsigned int pos );
+	void toplevelVerification( bool quiet , std::string parseFile );
 	// This builds a table of raw statements, parsing the name and properties
 	// of the statement, and then simply throwing all of the tokens of the rule
 	// into a vector for later
@@ -73,13 +78,14 @@ private:
 	// This adds the statements from tempParse to this, ensuring no duplicates
 	void mergeStatementList( std::string filename );
 	bool isOperator( std::string op );
-	bool isKeyword( std::string keyword );
 	// This returns true if the string passed in is considered a string literal
 	// containing no whitespace
 	bool isStringLiteral( std::string token );
 	// This returns true if the string passed in is considered a string literal
 	// containing anything
 	bool isPermissiveStringLiteral( std::string token );
+	// Returns a string literal without the begin and end quotes
+	std::string peelStringLiteral( std::string word );
 	// Checks if the string is the name of an established msg rule in the list
 	// of statements
 	bool isMsgName( std::string token );
@@ -93,7 +99,7 @@ private:
 	// list matching request, and then evaluates whichever was requested
 	bool matchOctothorpeString( std::string octostring , std::string token );
 	std::vector<Statement> statements;
-	std::vector<std::vector<std::string> > lists; 
+	std::vector<NamedVector> lists; 
 	Scope topScope;
 	std::string parseFile;
 };

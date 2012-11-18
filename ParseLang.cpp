@@ -27,12 +27,6 @@ static int castStringToInt( std::string val )
 	return num;
 }
 
-// Constructor, which also happens to do all the work
-ParseLang::ParseLang( std::string parseFile , std::string sourcefile )
-{
-	toplevelVerification( false , parseFile );
-}
-
 // Constructor
 ParseLang::ParseLang( std::string parseFile )
 {
@@ -41,6 +35,103 @@ ParseLang::ParseLang( std::string parseFile )
 
 ParseLang::ParseLang()
 {
+}
+
+void ParseLang::parseSourceFile( std::string sourcefile ,
+	std::vector<std::string> (*lexer_function)(std::string) )
+{
+	// Use either the default or user-defined lexing function to tokenize the
+	// source file for the language being parsed by the parsing language
+	std::vector<std::string> tokens = lexer_function( sourcefile );
+	std::cout << "Source Tokens:" << std::endl;
+	for ( int i = 0; i < tokens.size(); i++ )
+	{
+		std::cout << " " << tokens.at(i) << std::endl;
+	}
+	// Here, do the algorithm for parsing the source file
+	try
+	{
+		parseStatement( std::string( "TOPLEVEL" ) , tokens , 0 );
+		std::cout << "Parsed successfully." << std::endl;
+	}
+	catch( std::string msg )
+	{
+		std::cout << msg << std::endl;
+	}
+	return;
+}
+
+unsigned int ParseLang::parseStatement( std::string statementName , 
+	std::vector<std::string> tokens , unsigned int pos )
+{
+	unsigned int startPos = pos;
+	Statement current;
+	for ( unsigned int i = 0; i < statements.size(); i++ )
+	{
+		if ( statements.at(i).getName().compare( statementName ) == 0 )
+		{
+			current = statements.at(i);
+			break;
+		}
+	}
+	std::vector<std::string> rule = current.getRule();
+	std::cout << "Parsing rule " << statementName << std::endl;
+	for ( unsigned int i = 0; i < rule.size(); i++ )
+	{
+		if ( isRuleName( rule.at( i ) ) )
+		{
+			std::cout << "About to recurse on rule: " << rule.at(i) 
+				<< std::endl;
+			pos = parseStatement( rule.at(i) , tokens , pos );
+			std::cout << "Returned from recurse on: " << rule.at(i) 
+				<< std::endl;
+		}
+		else if ( isStringLiteral( rule.at( i ) ) )
+		{
+			std::cout << "Rule tok: [" << rule.at(i) << "] Peel literal: [" << 
+				peelStringLiteral( rule.at(i) ) << "] Token: [" << 
+				tokens.at(pos) << "]" << std::endl;
+			if ( peelStringLiteral( rule.at( i ) ).compare( tokens.at( pos ) ) 
+				!= 0 )
+			{
+				std::string error = "Dun goofed.";
+				throw error;
+			}
+			pos++;
+		}
+		else if ( rule.at(i).compare( "#" ) == 0 )
+		{
+			i++;
+			std::string strip = peelStringLiteral( rule.at(i) );
+			std::cout << "Rule tok: [" << rule.at(i) << "] Peel literal: [" << 
+				strip << "] Token: [" << 
+				tokens.at(pos) << "]" << std::endl;
+			bool found;
+			for ( int j = 0; j < tokens.at(pos).size(); j++ )
+			{
+				found = false;
+				for ( int k = 0; k < strip.size(); k++ )
+				{
+					if ( strip.at(k) == tokens.at(pos).at(j) )
+					{
+						found = true;
+						break;
+					}
+				}
+				if ( !found )
+				{
+					std::string error = "Error: Token [";
+					error += tokens.at(pos);
+					error += "] failed to match #-string \"";
+					error += strip;
+					error += "\".";
+					throw error;
+				}
+			}
+			pos++;
+		}
+	}
+	return pos;
 }
 
 // Returns true if the passed string is considered an operator by the parser
@@ -74,7 +165,7 @@ bool ParseLang::isOperator( std::string op )
 }
 
 // Returns true if the passed string is considered a keyword
-bool ParseLang::isKeyword( std::string keyword )
+bool ParseLang::isKeyword( std::string keyword ) const
 {
 	if ( keyword.compare( "newsym" ) == 0 || keyword.compare( "symbol" ) == 0 )
 	{
@@ -170,7 +261,7 @@ void ParseLang::toplevelVerification( bool quiet , std::string parseFile )
 		{
 			std::cout << msg << std::endl;
 		}
-		std::cout << "Rule: " << statements.at(i).getName() << "\n\t";
+		std::cout << " Rule: " << statements.at(i).getName() << "\n\t";
 		for ( int m = 0; m < statements.at(i).getRuleTransOne().size(); m++ )
 		{
 			std::cout << statements.at(i).getRuleTransOne().at(m) << " ";
@@ -199,7 +290,7 @@ void ParseLang::ensureMeaningfulTokens()
 				bool isListName = false;
 				for ( int k = 0; k < lists.size(); k++ )
 				{
-					if ( lists.at(k).at(0).compare( rule.at(j) ) == 0 )
+					if ( lists.at(k).matchNamedTable( rule.at(j) ) )
 					{
 						isListName = true;
 						break;
@@ -268,7 +359,7 @@ bool ParseLang::isRuleName( std::string token ) const
 
 bool ParseLang::isMsgName( std::string token )
 {
-	for ( int i = 0; i < (int) statements.size(); i++ )
+	for ( unsigned int i = 0; i < statements.size(); i++ )
 	{
 		if ( statements.at(i).getName().compare( token ) == 0 &&
 			( statements.at(i).isErrorMsg() || statements.at(i).isNoteMsg() ) )
@@ -277,19 +368,6 @@ bool ParseLang::isMsgName( std::string token )
 		}
 	}
 	return false;
-}
-
-void parseSourceFile( std::string sourcefile ,
-	std::vector<std::string> (*lexer_function)(std::string) )
-{
-	// Use either the default or user-defined lexing function to tokenize the
-	// source file for the language being parsed by the parsing language
-	std::vector<std::string> tokens = lexer_function( sourcefile );
-
-	// Here, do the algorithm for parsing the source file
-	
-
-	return;
 }
 
 void ParseLang::createLists()
@@ -313,11 +391,10 @@ void ParseLang::createLists()
 				error += "].";
 				throw error;
 			}
-			std::vector<std::string> newList;
 			// Check to ensure the list name is not already taken
 			for ( int i = 0; i < lists.size(); i++ )
 			{
-				if ( rule.at(0).compare( lists.at(i).at(0) ) == 0 )
+				if ( lists.at(i).matchNamedTable( rule.at(0) ) == 0 )
 				{
 					std::string error = "  Error in create_list directive:\n\t"
 						"List name argument already in use.\n\tFound as: [";
@@ -326,10 +403,9 @@ void ParseLang::createLists()
 					throw error;
 				}
 			}
-			// The first entry in the list vector is the name of the list.
+			// The first entry in the rule vector is the name of the list.
 			// Every entry after that will be an entry to the list
-			newList.push_back( rule.at( 0 ) );
-			lists.push_back( newList );
+			lists.push_back( NamedVector( rule.at(0) ) );
 			// Everything after must be a string literal, and will be added to
 			// the specified list
 			for ( int i = 1; i < rule.size() - 1; i++ )
@@ -345,18 +421,19 @@ void ParseLang::createLists()
 				}
 				else
 				{
-					lists.at( lists.size() - 1 ).push_back( rule.at( i ) );
+					lists.at( lists.size() - 1 ).addEntry( rule.at( i ) );
 				}
 			}
 		}
 	}
+	// Print out list table
 	for ( int i = 0; i < lists.size(); i++ )
 	{
-		std::cout << "\n  List name: " << lists.at(i).at(0) << std::endl;
-		for ( int j = 1; j < lists.at(i).size(); j++ )
+		std::cout << "\n  List name: " << lists.at(i).getName() << std::endl;
+		for ( int j = 0; j < lists.at(i).getTable().size(); j++ )
 		{
-			std::cout << "\t\t" << lists.at(i).at(j);
-			if ( j < lists.at(i).size() - 1 )
+			std::cout << "\t\t" << lists.at(i).getTable().at(j);
+			if ( j < lists.at(i).getTable().size() - 1 )
 			{
 				std::cout << std::endl;
 			}
@@ -700,7 +777,7 @@ void ParseLang::ensureOperatorUsage()
 					bool isListName = false;
 					for ( int k = 0; k < lists.size(); k++ )
 					{
-						if ( lists.at(k).at(0).compare( rule.at(j-1) ) == 0 )
+						if ( lists.at(k).matchNamedTable( rule.at(j-1) ) )
 						{
 							isListName = true;
 							break;
@@ -795,13 +872,29 @@ void ParseLang::ensureOperatorUsage()
 					!isRuleName( rule.at( j - 1 ) ) &&
 					castStringToInt( rule.at( j - 1 ) ) == 0 ) ) )
 				{
+					// Up until the continue, this just acts as another check. 
+					// If the token is the name of a list, it is meaningful and
+					// should not raise an error
+					bool isListName = false;
+					for ( int k = 0; k < lists.size(); k++ )
+					{
+						if ( lists.at(k).matchNamedTable( rule.at(j-1) ) )
+						{
+							isListName = true;
+							break;
+						}
+					}
+					if ( isListName )
+					{
+						continue;
+					}
 					std::string error = "  Error in definition of ";
 					error += statements.at(i).getName();
 					error += ":\n\t";
 					error += "\">\" operator misused at token ";
 					error += castIntToString(j);
 					error += ", \">\" must be between symbols\n\t";
-					error += "or parentheses [)>(].";
+					error += "or parentheses [)>(], or after a list name.";
 					error += "\n\tFound as: [";
 					error += rule.at( j - 1 );
 					error += " ";
@@ -1346,3 +1439,9 @@ std::vector<std::string> ParseLang::getSimilarTokens(
 	return simStrings;
 }
 
+std::string ParseLang::peelStringLiteral( std::string word )
+{
+	word.erase( word.begin() );
+	word.erase( word.end() - 1 );
+	return word;
+}

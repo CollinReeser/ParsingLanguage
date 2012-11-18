@@ -1,6 +1,7 @@
 
 #include <vector>
 #include <string>
+#include "SymbolTable.h"
 
 NamedVector::NamedVector( std::string name )
 {
@@ -19,6 +20,27 @@ bool NamedVector::addEntry( std::string entry )
 	table.push_back( entry );
 	return true;
 }
+
+// void addEntries( std::vector<std::string> entries )
+// {
+// 	bool exists = false;
+// 	for ( int i = 0; i < entries.size(); i++ )
+// 	{
+// 		for ( int j = 0; j < table.size(); j++ )
+// 		{
+// 			if ( table.at(j).compare( entries.at(i) ) == 0 )
+// 			{
+// 				exists = true;
+// 				break;
+// 			}
+// 		}
+// 		if ( !exists )
+// 		{
+// 			table.push_back( entries.at(i) );
+// 		}
+// 	}
+// 	return;
+// }
 
 bool NamedVector::isEntry( std::string entry )
 {
@@ -39,6 +61,16 @@ bool NamedVector::matchNamedTable( std::string posName )
 		return true;
 	}
 	return false;
+}
+
+std::string NamedVector::getName()
+{
+	return name;
+}
+
+std::vector<std::string> NamedVector::getTable()
+{
+	return table;
 }
 
 

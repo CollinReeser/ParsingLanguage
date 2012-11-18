@@ -24,7 +24,7 @@ New constructs:
 	- create_list : Rulename that earns special syntax like include_rules, and
 		denotes the creation of a named list that can be added to and checked
 		against.
-		Syntax: create_list myList = "int" "short" "long";
+		Syntax: create_list = myList "int" "short" "long";
 	- :addToList:[list name] : Where the bracketed portion is to be replaced
 	 	with the name of a declared list, as in @addToList:myList , and where
 	 	this construct is right-affixed to some singular string term, in
